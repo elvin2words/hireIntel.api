@@ -1,0 +1,8 @@
+# igonre the .idea folder
+.idea
+
+# ignore the virtual env
+venv
+
+# ignore the database
+instance
