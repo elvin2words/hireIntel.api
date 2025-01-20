@@ -15,8 +15,25 @@ email: {
   "username": "",
   "password": "",
   "smtp_host": "smtp.gmail.com",
-  "smtp_port": 465
+  "smtp_port": 465,
+  "imap_host": "imap.gmail.com",  # or your email provider's IMAP server
+  "imap_port": 993,
 }
 jwt: {
     "secret_key": 'secret_key'
+}
+profiler: {
+  "github_token": "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",
+  "google_api_key": "AIzaSyC3mzbjTwWyLKqgdpS-Z1iY5vcNhWl7mEc",
+  "intervals": {
+    text_extraction: 5,
+      github_scraping: 10,
+      google_scraping: 10,
+      profile_creation: 15
+  }
+}
+watcher: {
+  "watcher_folder": "./src/Modules/Integration/Watcher/watcher_folder",
+  "failed_folder": "./src/Modules/Integration/Watcher/failed_folder",
+  "check_interval": 1
 }

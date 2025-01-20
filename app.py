@@ -3,14 +3,16 @@ from flask import Flask
 from marshmallow import ValidationError
 
 # from api.config import config
-from src.config.AppSettings import Config, createApp
+from src.config.AppSettings import createApp
 
 # Import controllers
 from src.Controllers.AuthController import AUTH_CONTROLLER
+from src.Controllers.ScheduleMonitorController import MONITOR_CONTROLLER
 
 
 # Import error custom handling
 from src.Helpers.ErrorHandling import handleValidationError, handleGenericError
+from src.config.ConfigBase import Config
 
 
 def main():
@@ -22,7 +24,7 @@ def main():
     ]
 
     # Blueprints
-    blueprints = [AUTH_CONTROLLER,]
+    blueprints = [AUTH_CONTROLLER,MONITOR_CONTROLLER]
 
     # Load configuration
     config = Config()
