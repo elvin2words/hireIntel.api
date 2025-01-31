@@ -31,17 +31,16 @@ def init_pipelines(app: Flask, config: dict):
     # Add Email Monitor pipeline configuration and initialization
 
     # Register and add LinkedIn scraper pipeline
-    linkedin_scraping_config = LinkedInScrapingConfig(
-        name="linkedin_scraping",
-        batch_size=config["profiler"]["batch_size"],
-        process_interval=config["profiler"]["intervals"]["linkedin_scraping"] * 60,  # Convert to seconds
-        linkedin_email=config["profiler"]["linkedin_credentials"]["email"],
-        linkedin_password=config["profiler"]["linkedin_credentials"]["password"],
-        headless=True
-    )
-    print("these : ", config["profiler"]["linkedin_credentials"]["email"], config["profiler"]["linkedin_credentials"]["password"])
-    linkedin_pipeline = LinkedInScrapingPipeline(app, linkedin_scraping_config, monitor)
-    manager.register_pipeline(linkedin_pipeline)
+    # linkedin_scraping_config = LinkedInScrapingConfig(
+    #     name="linkedin_scraping",
+    #     batch_size=config["profiler"]["batch_size"],
+    #     process_interval=config["profiler"]["intervals"]["linkedin_scraping"] * 60,  # Convert to seconds
+    #     linkedin_email=config["profiler"]["linkedin_credentials"]["email"],
+    #     linkedin_password=config["profiler"]["linkedin_credentials"]["password"],
+    #     headless=True
+    # )
+    # linkedin_pipeline = LinkedInScrapingPipeline(app, linkedin_scraping_config, monitor)
+    # manager.register_pipeline(linkedin_pipeline)
 
     # Register and add profile creation pipeline
     profile_creation_config = ProfileCreationConfig(
