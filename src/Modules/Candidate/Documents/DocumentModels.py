@@ -3,6 +3,8 @@ from datetime import datetime
 import uuid
 from typing import Optional, List
 
+from sqlalchemy import Index
+
 from src.config.DBModelsConfig import db
 
 class Document(db.Model):
@@ -16,6 +18,11 @@ class Document(db.Model):
     document_type = db.Column(db.String(50), nullable=False)  # e.g., 'resume', 'cover_letter'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_document_candidate_type', 'candidate_id', 'document_type'),
+    )
 
     # Relationship
     candidate = db.relationship('Candidate', backref='documents')

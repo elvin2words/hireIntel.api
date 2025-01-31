@@ -1,15 +1,36 @@
-# src/Modules/Profiling/PipeLines/CreateProfile/ProfileCreationPipeline.py
 from datetime import datetime
 from typing import Dict, Any, List
+from flask import Flask
+
+from src.PipeLines.PipeLineManagement.PipeLineBase import PipelineConfig, BasePipeline
+from src.PipeLines.PipeLineManagement.PipeLineModels import PipelineStatus
+from src.PipeLines.PipeLineManagement.PipeLineMonitor import PipelineMonitor
 from src.config.DBModelsConfig import db
-from src.Modules.Candidate.CandidateModels import Candidate, CandidateStatus
+from src.Modules.Candidate.CandidateModels import Candidate, CandidateStatus, CandidatePipelineStatus
 from src.Modules.Jobs.JobModels import Job
 from src.Helpers.ErrorHandling import CustomError
-from src.Helpers.PipelineMonitor import PipelineStatus
 
-class MonitoredProfileCreationPipeline:
-    def __init__(self, monitor):
-        self.monitor = monitor
+
+class ProfileCreationConfig(PipelineConfig):
+    def __init__(self,
+                 name: str = "profile_creation",
+                 batch_size: int = 10,
+                 process_interval: int = 300,  # 5 minutes
+                 technical_weight: float = 0.4,
+                 experience_weight: float = 0.35,
+                 github_weight: float = 0.25,
+                 min_passing_score: float = 70.0):
+        super().__init__(name, batch_size, process_interval=process_interval)
+        self.technical_weight = technical_weight
+        self.experience_weight = experience_weight
+        self.github_weight = github_weight
+        self.min_passing_score = min_passing_score
+
+
+class ProfileCreationPipeline(BasePipeline):
+    def __init__(self, app: Flask, config: ProfileCreationConfig, monitor: PipelineMonitor):
+        super().__init__(app, config, monitor)
+        self.config: ProfileCreationConfig = config
 
     def calculate_technical_score(self, candidate_skills: List[str], job: Job) -> float:
         """Calculate technical skills match score"""
@@ -52,36 +73,24 @@ class MonitoredProfileCreationPipeline:
     def create_profile(self, candidate: Candidate) -> Dict[str, Any]:
         """Create comprehensive candidate profile"""
         try:
-            self.monitor.update_pipeline_state(
-                "profile_creation",
-                PipelineStatus.RUNNING,
-                f"Creating profile for candidate {candidate.id}"
-            )
-
             parsed_data = candidate.parsed_resume_data
             job = candidate.job
 
             # Extract skills from parsed resume
             skills = (
-                parsed_data.get('skills', {}).get('programming_languages', []) +
-                parsed_data.get('skills', {}).get('frameworks_libraries', [])
+                    parsed_data.get('skills', {}).get('programming_languages', []) +
+                    parsed_data.get('skills', {}).get('frameworks_libraries', [])
             )
 
             technical_score = self.calculate_technical_score(skills, job)
             experience_score = self.calculate_experience_score(candidate.years_of_experience or 0, job)
             github_score = self.calculate_github_score(parsed_data.get('github_profile'))
 
-            # Calculate overall score with weights
-            weights = {
-                'technical': 0.4,
-                'experience': 0.35,
-                'github': 0.25
-            }
-
+            # Calculate overall score using weights from config
             overall_score = (
-                technical_score * weights['technical'] +
-                experience_score * weights['experience'] +
-                github_score * weights['github']
+                    technical_score * self.config.technical_weight +
+                    experience_score * self.config.experience_weight +
+                    github_score * self.config.github_weight
             )
 
             profile = {
@@ -105,40 +114,25 @@ class MonitoredProfileCreationPipeline:
                 'online_presence': parsed_data.get('google_results', [])
             }
 
-            self.monitor.update_pipeline_state(
-                "profile_creation",
-                PipelineStatus.IDLE,
-                f"Successfully created profile for candidate {candidate.id}",
-                details={'scores': profile['scores']}
-            )
-
             return profile
 
         except Exception as e:
-            self.monitor.update_pipeline_state(
-                "profile_creation",
-                PipelineStatus.ERROR,
-                error_message=f"Error creating profile: {str(e)}"
-            )
+            self.logger.error(f"Error creating profile for candidate {candidate.id}: {str(e)}")
             raise CustomError(f"Error creating profile: {str(e)}", 400)
 
-    def run_pipeline(self):
-        """Execute profile creation pipeline"""
+    def process_batch(self) -> None:
+        """Process a batch of candidates for profile creation"""
         try:
-            self.monitor.update_pipeline_state(
-                "profile_creation",
-                PipelineStatus.RUNNING,
-                "Starting profile creation pipeline"
-            )
+            # Get candidates ready for profile creation
+            candidates = Candidate.query.filter_by(
+                pipeline_status=CandidatePipelineStatus.PROFILE_CREATION
+            ).limit(self.config.batch_size).all()
 
-            # Get all candidates ready for profile creation
-            candidates = Candidate.query.filter_by(profiler_status='PROFILE').all()
+            if not candidates:
+                self.logger.info("No candidates found for profile creation")
+                return
 
-            self.monitor.update_pipeline_state(
-                "profile_creation",
-                PipelineStatus.RUNNING,
-                f"Found {len(candidates)} candidates to process"
-            )
+            self.logger.info(f"Processing {len(candidates)} candidates for profile creation")
 
             for candidate in candidates:
                 try:
@@ -149,34 +143,27 @@ class MonitoredProfileCreationPipeline:
                     parsed_data['profile'] = profile
 
                     candidate.parsed_resume_data = parsed_data
-                    candidate.profiler_status = 'COMPLETED'
+                    candidate.pipeline_status = CandidatePipelineStatus.PROFILE_CREATED
                     candidate.updated_at = datetime.utcnow()
 
                     # Update candidate status based on profile score
-                    if profile['scores']['overall_score'] >= 70:
+                    if profile['scores']['overall_score'] >= self.config.min_passing_score:
                         candidate.status = CandidateStatus.SCREENING
 
                     db.session.commit()
+                    self.logger.info(f"Successfully created profile for candidate {candidate.id}")
 
                 except Exception as e:
                     db.session.rollback()
-                    self.monitor.update_pipeline_state(
-                        "profile_creation",
+                    self.logger.error(f"Failed to create profile for candidate {candidate.id}: {str(e)}")
+                    self.monitor.update_state(
+                        self.config.name,
                         PipelineStatus.ERROR,
                         error_message=f"Failed to create profile for candidate {candidate.id}: {str(e)}"
                     )
                     continue
 
-            self.monitor.update_pipeline_state(
-                "profile_creation",
-                PipelineStatus.IDLE,
-                "Profile creation pipeline completed"
-            )
-
         except Exception as e:
-            self.monitor.update_pipeline_state(
-                "profile_creation",
-                PipelineStatus.ERROR,
-                error_message=f"Profile creation pipeline failed: {str(e)}"
-            )
+            self.logger.error(f"Batch processing failed: {str(e)}")
             raise CustomError(f"Profile creation pipeline failed: {str(e)}", 400)
+

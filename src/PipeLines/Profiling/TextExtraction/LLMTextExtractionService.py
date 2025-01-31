@@ -10,18 +10,10 @@ import io
 
 
 class ResumeVisionParser:
-    def __init__(self, resume_path: Union[str, Path], output_dir: Union[str, Path] = None):
-        self.api_key = "AIzaSyC3mzbjTwWyLKqgdpS-Z1iY5vcNhWl7mEc"
+    def __init__(self, resume_path: str, output_dir: str):
+        self.api_key = "AIzaSyDHrYRfS6X6e1Ia1OwmMoRw48JD94tp28o"
         self.resume_path = Path(resume_path)
-
-        # Set output directory to parent of resume file if not specified
-        if output_dir is None:
-            self.output_dir = self.resume_path.parent
-        else:
-            self.output_dir = Path(output_dir)
-
-        # Create output directory if it doesn't exist
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.output_dir = Path(output_dir)
 
     def init_gemini(self):
         """Initialize Gemini Pro Vision model"""
@@ -31,120 +23,75 @@ class ResumeVisionParser:
         return model
 
     def generate_prompt(self) -> str:
-        """Generate prompt for resume parsing with enhanced focus on software development"""
-        return """Please analyze this resume/CV text and extract the information into a structured format.
-        This parser is optimized for software developer/engineer resumes but should work with all resume types.
-        Look for key sections like personal information, work experience, education, skills, and technical projects.
-        Pay special attention to technical details, coding projects, and development experience.
-        Return ONLY a JSON object with the following structure, no additional text or explanations:
+        """Generate prompt for resume parsing with strict alignment to defined database models"""
+        return """Please analyze this resume/CV text and extract only the values that satisfy the given database schema.
+        Ensure that extracted data strictly follows the model structure, including required fields and data types.
+        Return ONLY a JSON object in the following format, with no additional text or explanations:
 
         {
             "personal_information": {
                 "full_name": "",
                 "email": "",
-                "phone": "",
-                "location": "",
-                "linkedin": "",
-                "github": {
-                    "url": "",
-                    "username": ""  // Extract username from GitHub URL
-                },
-                "portfolio_website": "",
-                "blog": ""
+                "phone_numbers": [],  // Array of phone numbers
+                "address": "",
+                "linkedin_url": "",
+                "github_url": "",
+                "portfolio_url": ""
             },
-            "professional_summary": "",
-            "work_experience": [
-                {
-                    "company": "",
-                    "position": "",
-                    "location": "",
-                    "start_date": "YYYY-MM",
-                    "end_date": "YYYY-MM",
-                    "responsibilities": [],
-                    "achievements": [],
-                    "technologies_used": [],  // List of technologies, frameworks, languages used
-                    "team_size": null,  // Optional: Size of team worked with
-                    "development_methodologies": []  // e.g., Agile, Scrum, Kanban
-                }
-            ],
             "education": [
                 {
                     "institution": "",
                     "degree": "",
                     "field_of_study": "",
-                    "graduation_date": "YYYY-MM",
-                    "gpa": null,
-                    "relevant_coursework": [],
-                    "academic_projects": [],
-                    "honors_awards": []
-                }
-            ],
-            "skills": {
-                "programming_languages": [],  // e.g., Python, Java, JavaScript
-                "frameworks_libraries": [],   // e.g., React, Django, Spring
-                "databases": [],             // e.g., PostgreSQL, MongoDB
-                "cloud_platforms": [],       // e.g., AWS, Azure, GCP
-                "developer_tools": [],       // e.g., Git, Docker, Jenkins
-                "testing_tools": [],         // e.g., Jest, PyTest
-                "methodologies": [],         // e.g., Agile, TDD, CI/CD
-                "soft_skills": [],
-                "languages": [],             // Human languages
-                "certifications": [
-                    {
-                        "name": "",
-                        "issuer": "",
-                        "date": "YYYY-MM",
-                        "expiry_date": "YYYY-MM",  // Optional
-                        "credential_id": ""        // Optional
-                    }
-                ]
-            },
-            "technical_projects": [
-                {
-                    "name": "",
+                    "start_date": "YYYY-MM-DD",
+                    "end_date": "YYYY-MM-DD",  // Nullable
+                    "gpa": null,  // Nullable, float
                     "description": "",
-                    "role": "",              // e.g., Lead Developer, Contributor
-                    "start_date": "YYYY-MM",
-                    "end_date": "YYYY-MM",   // Optional, for ongoing projects
-                    "technologies": [],
-                    "github_url": "",
-                    "live_url": "",          // If project is deployed
-                    "achievements": [],       // e.g., metrics, impact
-                    "key_features": [],
-                    "team_size": null        // Optional
+                    "location": ""
                 }
             ],
-            "open_source_contributions": [
+            "work_experience": [
                 {
-                    "project_name": "",
-                    "project_url": "",
-                    "contribution_type": "",  // e.g., Bug fixes, Features, Documentation
+                    "company": "",
+                    "position": "",
+                    "employment_type": "",  // Must be one of ["full_time", "part_time", "contract", "freelance", "internship"]
+                    "start_date": "YYYY-MM-DD",
+                    "end_date": "YYYY-MM-DD",  // Nullable
+                    "is_current": false,
+                    "location": "",
                     "description": "",
-                    "date": "YYYY-MM"
+                    "achievements": []
                 }
             ],
-            "publications_presentations": [   // Optional: for technical writing/speaking
+            "technical_skills": [
                 {
-                    "title": "",
-                    "type": "",              // e.g., Blog post, Conference talk, Paper
-                    "date": "YYYY-MM",
-                    "url": "",
-                    "description": ""
+                    "skill_name": "",
+                    "proficiency_level": "",  // Nullable, e.g., "Expert", "Intermediate"
+                    "years_experience": null  // Nullable, integer
+                }
+            ],
+            "soft_skills": [
+                {
+                    "skill_name": ""
+                }
+            ],
+            "keywords": [
+                {
+                    "keyword": "",
+                    "category": ""  // Nullable, e.g., "Technology", "Industry", "Role"
                 }
             ]
         }
 
         Guidelines for extraction:
-        1. For GitHub links, extract both the full URL and the username (e.g., from 'https://github.com/username' extract 'username')
-        2. In work experience, focus on technical achievements and specific technologies used
-        3. For projects, prioritize those with code samples, deployments, or measurable impacts
-        4. Categorize skills appropriately into the detailed technical categories
-        5. Include relevant coursework and academic projects if the candidate is a recent graduate
-        6. Extract any metrics or quantifiable achievements (e.g., 'reduced load time by 40%')
-        7. Note any leadership or mentorship experiences in technical contexts
-        8. If any field is not found in the resume, leave it as null for numbers or empty string/array as appropriate
-        9. Convert all dates to YYYY-MM format"""
-
+        1. Ensure that `employment_type` values match only the predefined enum options.
+        2. Extract `phone_numbers` as an array.
+        3. Use `null` for missing numerical values (e.g., `gpa`, `years_experience`).
+        4. Ensure all date fields follow the format YYYY-MM-DD.
+        5. Only extract fields that directly match the database schema, ignoring unrelated information.
+        6. If an attribute is not found, return it as null (for numbers) or an empty string/array as appropriate.
+        7. Do not include extra fields or descriptions outside the defined structure.
+        """
 
     @staticmethod
     def extract_json_from_response(response_text: str) -> dict:
@@ -306,26 +253,26 @@ class ResumeVisionParser:
             raise Exception(f"Error parsing resume with vision: {str(e)}")
 
 
-def main():
-    """Main execution function"""
-    resume = "./testt.docx"  #  ./test.pdf
-    output_dir = "./output"
-
-    try:
-        print(f"Processing resume: {resume}")
-        # Initialize parser with resume path and optional output directory
-        parser = ResumeVisionParser(resume, output_dir)
-
-        # Parse resume using vision capabilities
-        result = parser.parse_resume_with_vision()
-
-        # Print the path to the output file
-        output_file = Path(output_dir) / f"{Path(resume).stem}_parsed.json"
-        print(f"Results saved to {output_file}")
-
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        exit(1)
-
-if __name__ == "__main__":
-    main()
+# def main():
+#     """Main execution function"""
+#     resume = "./testt.docx"  #  ./test.pdf
+#     output_dir = "./output"
+#
+#     try:
+#         print(f"Processing resume: {resume}")
+#         # Initialize parser with resume path and optional output directory
+#         parser = ResumeVisionParser(resume, output_dir)
+#
+#         # Parse resume using vision capabilities
+#         result = parser.parse_resume_with_vision()
+#
+#         # Print the path to the output file
+#         output_file = Path(output_dir) / f"{Path(resume).stem}_parsed.json"
+#         print(f"Results saved to {output_file}")
+#
+#     except Exception as e:
+#         print(f"Error: {str(e)}")
+#         exit(1)
+#
+# if __name__ == "__main__":
+#     main()

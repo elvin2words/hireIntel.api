@@ -6,34 +6,70 @@ server: {
   "ssl_key": "",
   "ssl_cert": ""
 }
+
 database: {
   "uri": 'sqlite:///hire.db',
    "track_modifications": false
 }
+
 email: {
-  "from": "",
-  "username": "",
-  "password": "",
+  "from": "hire",
+  "username": "info.garret.events@gmail.com",
+  "password": "ekdp awmj tkgb shoo",
   "smtp_host": "smtp.gmail.com",
   "smtp_port": 465,
-  "imap_host": "imap.gmail.com",  # or your email provider's IMAP server
+  "imap_host": "imap.gmail.com",
   "imap_port": 993,
 }
+
 jwt: {
     "secret_key": 'secret_key'
 }
+
+assets: {
+    "resume": "./src/Static/Resume/Documents",
+    "json_resume": "./src/Static/Resume/Json",
+}
+
 profiler: {
   "github_token": "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",
   "google_api_key": "AIzaSyC3mzbjTwWyLKqgdpS-Z1iY5vcNhWl7mEc",
+  "google_search_url": "",
+  "batch_size": 5,
   "intervals": {
-    text_extraction: 5,
-      github_scraping: 10,
-      google_scraping: 10,
-      profile_creation: 15
+    linkedin_scraping: 1,
+    text_extraction: 1,
+    github_scraping: 1,
+    google_scraping: 1,
+    profile_creation: 1
+  },
+  "scoring": {
+    "weights": {
+      "technical": 0.4,
+      "experience": 0.35,
+      "github": 0.25
+    },
+    "min_passing_score": 70.0
+  },
+  "linkedin_credentials": {
+    "email": "info.garret.events@gmail.com",
+    "password": "@Slumptools1"
   }
 }
+
 watcher: {
-  "watcher_folder": "./src/Modules/Integration/Watcher/watcher_folder",
-  "failed_folder": "./src/Modules/Integration/Watcher/failed_folder",
+  "watcher_folder": "./src/Modules/PipeLines/Integration/FileWatcher/watcher_folder",
+  "failed_folder": "./src/Modules/PipeLines/Integration/FileWatcher/failed_folder",
   "check_interval": 1
+}
+
+email_pipe_line: {
+  batch_size: 10,
+  check_interval: 1,
+  folder: "./src/Static/Inbox/Documents",
+  allowed_attachments: [
+    ".pdf",
+    ".doc",
+    ".docx"
+  ]
 }

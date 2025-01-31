@@ -182,3 +182,77 @@ class GitHubDataFetcher:
 #
 # if __name__ == "__main__":
 #     main()
+
+
+# from flask import Flask
+# from src.Modules.PipelineTracking.PipelineTrackingService import PipelineTrackingService
+# from src.Modules.PipelineTracking.PipelineTrackingModels import PipelineStage, PipelineStatus
+# from src.Modules.PipeLines.Profiling.PipeLineBase import BasePipeline
+#
+#
+# class GitHubScrapingPipeline(BasePipeline):
+#     def process_batch(self):
+#         try:
+#             # Get pipeline trackings for GITHUB_SCRAPING stage
+#             pipeline_trackings = self._get_candidates_for_processing(
+#                 PipelineStage.GITHUB_SCRAPING
+#             )
+#
+#             for pipeline_tracking in pipeline_trackings:
+#                 try:
+#                     pipeline_id = pipeline_tracking['id']
+#                     candidate_id = pipeline_tracking['candidate_id']
+#
+#                     # Mark pipeline as in progress
+#                     self._update_pipeline_tracking(
+#                         pipeline_id,
+#                         PipelineStage.GITHUB_SCRAPING,
+#                         PipelineStatus.IN_PROGRESS
+#                     )
+#
+#                     # Get candidate and process GitHub data
+#                     candidate = Candidate.query.get(candidate_id)
+#                     if not candidate:
+#                         raise ValueError(f"Candidate not found: {candidate_id}")
+#
+#                     parsed_data = candidate.parsed_resume_data
+#                     github_info = parsed_data.get('personal_information', {}).get('github', {})
+#
+#                     if not github_info.get('username'):
+#                         # No GitHub username, mark as skipped
+#                         self._update_pipeline_tracking(
+#                             pipeline_id,
+#                             PipelineStage.GITHUB_SCRAPING,
+#                             PipelineStatus.SKIPPED
+#                         )
+#                         continue
+#
+#                     # Fetch GitHub data
+#                     github_data = self.__github_fetcher.get_user_stats(github_info['username'])
+#
+#                     # Update candidate data
+#                     parsed_data['github_profile'] = github_data
+#                     candidate.parsed_resume_data = parsed_data
+#
+#                     # Mark pipeline as successful
+#                     metadata = {
+#                         'github_username': github_info['username'],
+#                         'repositories_count': len(github_data.get('repositories', []))
+#                     }
+#                     self._update_pipeline_tracking(
+#                         pipeline_id,
+#                         PipelineStage.GITHUB_SCRAPING,
+#                         PipelineStatus.SUCCESSFUL,
+#                         metadata
+#                     )
+#
+#                 except Exception as e:
+#                     # Handle individual pipeline processing errors
+#                     self._process_pipeline_error(
+#                         pipeline_tracking['id'],
+#                         PipelineStage.GITHUB_SCRAPING,
+#                         e
+#                     )
+#
+#         except Exception as e:
+#             self.logger.error(f"Batch processing failed: {str(e)}")

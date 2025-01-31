@@ -1,3 +1,5 @@
+import signal
+import threading
 
 from flask import Flask
 from marshmallow import ValidationError
@@ -14,6 +16,21 @@ from src.Controllers.ScheduleMonitorController import MONITOR_CONTROLLER
 from src.Helpers.ErrorHandling import handleValidationError, handleGenericError
 from src.config.ConfigBase import Config
 
+def init_signal_handlers(app):
+    def handle_shutdown(signum, frame):
+        app.logger.info("Received shutdown signal")
+        if hasattr(app, 'pipeline_manager'):
+            try:
+                # Only attempt shutdown from main thread
+                if threading.current_thread() == threading.main_thread():
+                    app.pipeline_manager.stop_all()
+            except Exception as e:
+                app.logger.error(f"Error during shutdown: {str(e)}")
+
+    # Register signal handlers
+    signal.signal(signal.SIGTERM, handle_shutdown)
+    signal.signal(signal.SIGINT, handle_shutdown)
+
 
 def main():
     # Custom error handling
@@ -24,7 +41,7 @@ def main():
     ]
 
     # Blueprints
-    blueprints = [AUTH_CONTROLLER,MONITOR_CONTROLLER]
+    blueprints = [AUTH_CONTROLLER,MONITOR_CONTROLLER]#MONITOR_CONTROLLER
 
     # Load configuration
     config = Config()
@@ -34,6 +51,8 @@ def main():
         blueprints=blueprints,
         error_handlers=error_handlers
     )
+
+    init_signal_handlers(app)
 
     try:
         options = {

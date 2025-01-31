@@ -1,16 +1,19 @@
 import os
 import shutil
 import uuid
+from datetime import datetime
+
 from werkzeug.utils import secure_filename
 
+from src.Helpers.ErrorHandling import CustomError
 from src.Modules.Candidate.Documents.DocumentModels import Document
 from src.Modules.Candidate.Documents.DocumentRepository import DocumentRepository
 
 
 class DocumentService:
-    def __init__(self):
+    def __init__(self, path):
         self.__document_repository = DocumentRepository()
-        self.UPLOAD_FOLDER = 'static/documents'
+        self.UPLOAD_FOLDER = path
         self.ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 
     def allowed_file(self, filename):
@@ -41,3 +44,27 @@ class DocumentService:
             return self.__document_repository.save_document(document)
         except Exception as e:
             raise Exception(f"Error storing document: {str(e)}")
+
+    def get_candidate_resume(self, candidate_id):
+        """Get the most recent resume document for a candidate"""
+        try:
+            resume = self.__document_repository.get_latest_candidate_resume(candidate_id)
+            if not resume:
+                raise CustomError("No resume found for candidate", 404)
+            return resume
+        except Exception as e:
+            raise CustomError(f"Error fetching resume: {str(e)}", 400)
+
+    def update_document_status(self, document_id, new_status):
+        """Update document processing status"""
+        try:
+            document = self.__document_repository.get_document_by_id(document_id)
+            if not document:
+                raise CustomError("Document not found", 404)
+
+            document.status = new_status
+            document.updated_at = datetime.utcnow()
+
+            return self.__document_repository.update_document(document)
+        except Exception as e:
+            raise CustomError(f"Error updating document status: {str(e)}", 400)

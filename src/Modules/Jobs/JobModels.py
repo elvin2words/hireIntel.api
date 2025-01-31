@@ -2,9 +2,7 @@ from enum import Enum
 from datetime import datetime
 import uuid
 from sqlalchemy import Enum as SqlEnum
-
 from src.config.DBModelsConfig import db
-
 
 class JobStatus(Enum):
     DRAFT = "draft"
@@ -36,14 +34,14 @@ class Job(db.Model):
     description = db.Column(db.Text, nullable=False)
     department = db.Column(db.String(100), nullable=True)
     location = db.Column(db.String(255), nullable=False)
-    remote_policy = db.Column(db.String(50), nullable=True)  # e.g., "Remote", "Hybrid", "On-site"
+    remote_policy = db.Column(db.String(50), nullable=True)
     employment_type = db.Column(SqlEnum(EmploymentType), nullable=False)
     experience_level = db.Column(SqlEnum(ExperienceLevel), nullable=False)
     min_experience_years = db.Column(db.Integer, nullable=False)
     max_experience_years = db.Column(db.Integer, nullable=True)
     min_salary = db.Column(db.Float, nullable=True)
     max_salary = db.Column(db.Float, nullable=True)
-    currency = db.Column(db.String(3), nullable=True)  # e.g., "USD", "EUR"
+    currency = db.Column(db.String(3), nullable=True)
     candidates_needed = db.Column(db.Integer, nullable=False, default=1)
     status = db.Column(SqlEnum(JobStatus), nullable=False, default=JobStatus.DRAFT)
     application_deadline = db.Column(db.DateTime, nullable=True)
@@ -51,13 +49,9 @@ class Job(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     published_at = db.Column(db.DateTime, nullable=True)
 
-    # Relationships
-    technical_skills = db.relationship('JobTechnicalSkill', backref='job', lazy=True, cascade="all, delete-orphan")
-    soft_skills = db.relationship('JobSoftSkill', backref='job', lazy=True, cascade="all, delete-orphan")
-    education_requirements = db.relationship('JobEducation', backref='job', lazy=True, cascade="all, delete-orphan")
-
     def __repr__(self):
         return f"<Job {self.title}>"
+
 
 class JobTechnicalSkill(db.Model):
     __tablename__ = 'job_technical_skills'

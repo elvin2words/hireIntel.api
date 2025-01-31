@@ -3,7 +3,7 @@ import uuid
 
 from src.Helpers.ErrorHandling import CustomError
 from src.Modules.Candidate.CandidateDTOs import CandidateDTO
-from src.Modules.Candidate.CandidateModels import Candidate, CandidateStatus
+from src.Modules.Candidate.CandidateModels import Candidate, CandidateStatus, CandidatePipelineStatus
 from src.Modules.Candidate.CandidateRepository import CandidateRepository
 from src.Modules.Interviews.InterviewDTOs import InterviewDTO
 from src.Modules.Interviews.InterviewServices import InterviewService
@@ -128,3 +128,63 @@ class CandidateService:
             return CandidateDTO(many=True).dump(candidates)
         except Exception as e:
             raise CustomError(str(e), 400)
+
+    def update_pipeline_status(self, candidate_id: str, status: CandidatePipelineStatus) -> dict:
+        try:
+            candidate = self.__candidate_repository.get_candidate_by_id(candidate_id)
+
+            if not candidate:
+                raise CustomError("Candidate not found", 404)
+
+            candidate.pipeline_status = status
+            candidate.updated_at = datetime.utcnow()
+
+            self.__candidate_repository.update_candidate(candidate)
+            return CandidateDTO(many=False).dump(candidate)
+
+        except Exception as e:
+            raise CustomError(str(e), 400)
+
+    def get_pipeline_status(self, candidate_id):
+        try:
+            candidate = self.__candidate_repository.get_candidate_by_id(candidate_id)
+            if not candidate:
+                raise CustomError("Candidate not found", 404)
+            return CandidatePipelineStatus(candidate.pipeline_status)
+        except Exception as e:
+            raise CustomError(str(e), 400)
+
+    # Success state convenience methods
+    def set_pipeline_status_to_text_extraction(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.EXTRACT_TEXT)
+
+    def set_pipeline_status_to_google_scrape(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.GOOGLE_SCRAPE)
+
+    def set_pipeline_status_to_linkedin_scrape(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.LINKEDIN_SCRAPE)
+
+    def set_pipeline_status_to_github_scrape(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.GITHUB_SCRAPE)
+
+    def set_pipeline_status_to_profile_creation(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.PROFILE_CREATION)
+
+    def set_pipeline_status_to_profile_created(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.PROFILE_CREATED)
+
+    # Failed state convenience methods
+    def set_pipeline_status_to_text_extraction_failed(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.EXTRACT_TEXT_FAILED)
+
+    def set_pipeline_status_to_google_scrape_failed(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.GOOGLE_SCRAPE_FAILED)
+
+    def set_pipeline_status_to_linkedin_scrape_failed(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.LINKEDIN_SCRAPE_FAILED)
+
+    def set_pipeline_status_to_github_scrape_failed(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.GITHUB_SCRAPE_FAILED)
+
+    def set_pipeline_status_to_profile_creation_failed(self, candidate_id: str) -> dict:
+        return self.update_pipeline_status(candidate_id, CandidatePipelineStatus.PROFILE_CREATION_FAILED)
