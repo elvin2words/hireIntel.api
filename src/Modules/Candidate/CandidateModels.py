@@ -7,7 +7,6 @@ from src.config.DBModelsConfig import db
 
 class CandidateStatus(Enum):
     APPLIED = "applied"
-    SCREENING = "screening"
     INTERVIEWING = "interviewing"
     OFFERED = "offered"
     HIRED = "hired"
@@ -15,6 +14,10 @@ class CandidateStatus(Enum):
     WITHDRAWN = "withdrawn"
 
 class CandidatePipelineStatus(Enum):
+    # File watcher
+    XML = "xml"
+    XML_FAILED = "xml_failed"
+
     # Text Extraction
     EXTRACT_TEXT = "extract_text"
     EXTRACT_TEXT_FAILED = "extract_text_failed"
@@ -35,8 +38,11 @@ class CandidatePipelineStatus(Enum):
     PROFILE_CREATION = "profile_creation"
     PROFILE_CREATION_FAILED = "profile_creation_failed"
 
-    # Final Status
+    # Profile created (Final) Status
     PROFILE_CREATED = "profile_created"
+    PROFILE_CREATED_FAILED = "profile_created_failed"
+
+
 
 
 class Candidate(db.Model):
@@ -54,9 +60,10 @@ class Candidate(db.Model):
     current_company = db.Column(db.String(255), nullable=True)
     current_position = db.Column(db.String(255), nullable=True)
     years_of_experience = db.Column(db.Integer, nullable=True)
+    location = db.Column(db.String(255), nullable=True)
 
     status = db.Column(SqlEnum(CandidateStatus), nullable=False, default=CandidateStatus.APPLIED)
-    pipeline_status = db.Column(SqlEnum(CandidatePipelineStatus), nullable=False, default=CandidatePipelineStatus.EXTRACT_TEXT)
+    pipeline_status = db.Column(SqlEnum(CandidatePipelineStatus), nullable=False, default=CandidatePipelineStatus.XML)
     application_date = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

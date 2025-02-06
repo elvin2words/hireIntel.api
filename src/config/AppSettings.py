@@ -13,7 +13,7 @@ from src.PipeLines.Profiling.DataScraping.GitHubScrap.GitHubScrapingPipeline imp
     GitHubScrapingPipeline
 from src.PipeLines.Profiling.DataScraping.GoogleScrap.GoogleScrapingPipeline import GoogleScrapingConfig, \
     GoogleScrapingPipeline
-from src.PipeLines.Profiling.DataScraping.LinkedInScrap.LinkedInScrapper import LinkedInScrapingConfig, \
+from src.PipeLines.Profiling.DataScraping.LinkedInScrap.LinkedInScrapperPipeLine import LinkedInScrapingConfig, \
     LinkedInScrapingPipeline
 from src.PipeLines.Profiling.TextExtraction.TextExtractionPipeline import TextExtractionPipelineConfig, \
     TextExtractionPipeline
@@ -31,16 +31,15 @@ def init_pipelines(app: Flask, config: dict):
     # Add Email Monitor pipeline configuration and initialization
 
     # Register and add LinkedIn scraper pipeline
-    # linkedin_scraping_config = LinkedInScrapingConfig(
-    #     name="linkedin_scraping",
-    #     batch_size=config["profiler"]["batch_size"],
-    #     process_interval=config["profiler"]["intervals"]["linkedin_scraping"] * 60,  # Convert to seconds
-    #     linkedin_email=config["profiler"]["linkedin_credentials"]["email"],
-    #     linkedin_password=config["profiler"]["linkedin_credentials"]["password"],
-    #     headless=True
-    # )
-    # linkedin_pipeline = LinkedInScrapingPipeline(app, linkedin_scraping_config, monitor)
-    # manager.register_pipeline(linkedin_pipeline)
+    linkedin_scraping_config = LinkedInScrapingConfig(
+        name="linkedin_scraping",
+        batch_size=config["profiler"]["batch_size"],
+        process_interval=config["profiler"]["intervals"]["linkedin_scraping"] * 60,  # Convert to seconds
+        linkedin_email=config["profiler"]["linkedin_credentials"]["email"],
+        linkedin_password=config["profiler"]["linkedin_credentials"]["password"],
+    )
+    linkedin_pipeline = LinkedInScrapingPipeline(app, linkedin_scraping_config, monitor)
+    manager.register_pipeline(linkedin_pipeline)
 
     # Register and add profile creation pipeline
     profile_creation_config = ProfileCreationConfig(
@@ -60,7 +59,7 @@ def init_pipelines(app: Flask, config: dict):
         name="email_monitor",
         batch_size=config["email_pipe_line"]["batch_size"],
         process_interval=config["email_pipe_line"]["check_interval"] * 60,  # Convert minutes to seconds
-        start_date="2025-01-20",
+        start_date="2025-01-31",
         end_date="2025-03-20",
         email_folder=config["email_pipe_line"]["folder"],
         attachment_types=config["email_pipe_line"]["allowed_attachments"]

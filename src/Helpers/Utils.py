@@ -6,6 +6,7 @@ from marshmallow import Schema, post_dump
 from src.Modules.Auth.AuthModels import Role
 
 
+
 class InternalDTOUser:
     def __init__(self, user_id, email, role):
         global role_map

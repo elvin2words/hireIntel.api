@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict
 
-from src.Helpers.base_repository import BaseRepository
+from src.Helpers.BaseRepository import BaseRepository
 from src.Modules.PipeLineData.TextExtractionData.TextExtractionModels import (
     Resume, Education, WorkExperience, TechnicalSkill, SoftSkill, Keyword
 )
@@ -39,6 +39,17 @@ class ResumeRepository(BaseRepository[Resume]):
                     query = query.filter(self._model.full_name.ilike(f"%{filters['full_name']}%"))
 
             return query.all()
+        except SQLAlchemyError as e:
+            self._db.session.rollback()
+            raise e
+
+    def get_by_candidate_id(self, candidate_id: str) -> List[Resume]:
+        """
+        Get all resumes associated with a specific candidate ID
+        """
+        try:
+            print("Inside get by candidate Repository ", candidate_id)
+            return self._db.session.query(self._model).filter_by(candidate_id=candidate_id).all()
         except SQLAlchemyError as e:
             self._db.session.rollback()
             raise e

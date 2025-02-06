@@ -18,6 +18,7 @@ class CandidateDTO(CamelCaseSchema):
     current_company = fields.Str(allow_none=True)
     current_position = fields.Str(allow_none=True)
     years_of_experience = fields.Int(allow_none=True)
+    location = fields.Str(allow_none=True)
 
     status = fields.Method("get_status")
     application_date = fields.DateTime(dump_only=True)

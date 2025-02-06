@@ -58,15 +58,15 @@ profiler: {
 }
 
 watcher: {
-  "watcher_folder": "./src/Modules/PipeLines/Integration/FileWatcher/watcher_folder",
-  "failed_folder": "./src/Modules/PipeLines/Integration/FileWatcher/failed_folder",
+  "watcher_folder": "./src/PipeLines/Integration/FileWatcher/Watcher/watcher_folder",
+  "failed_folder": "./src/PipeLines/Integration/FileWatcher/Watcher/failed_folder",
   "check_interval": 1
 }
 
 email_pipe_line: {
   batch_size: 10,
   check_interval: 1,
-  folder: "./src/Static/Inbox/Documents",
+  folder: "INBOX",
   allowed_attachments: [
     ".pdf",
     ".doc",

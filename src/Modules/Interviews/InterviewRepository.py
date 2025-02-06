@@ -1,57 +1,60 @@
-import datetime
+from datetime import datetime
+from typing import List, Optional, Dict
+from src.Helpers.BaseRepository import BaseRepository
+from src.Modules.Interviews.InterviewModels import InterviewSchedule, EmailNotification, InterviewStatus
 
-from src.Modules.Interviews.InterviewModels import Interview, InterviewStatus
-from src.config.DBModelsConfig import db
 
-
-class InterviewRepository:
+class InterviewScheduleRepository(BaseRepository[InterviewSchedule]):
     def __init__(self):
-        self.__db = db
+        super().__init__(InterviewSchedule)
 
-    def get_all_interviews(self, filters=None):
-        query = self.__db.session.query(Interview)
+    def get_by_candidate_id(self, candidate_id: str) -> Optional[InterviewSchedule]:
+        """Get interview schedule by candidate ID"""
+        return self._model.query.filter_by(candidate_id=candidate_id).first()
 
-        if filters:
-            if 'status' in filters:
-                query = query.filter(Interview.status == filters['status'])
-            if 'interview_type' in filters:
-                query = query.filter(Interview.interview_type == filters['interview_type'])
-            if 'candidate_id' in filters:
-                query = query.filter(Interview.candidate_id == filters['candidate_id'])
-            if 'interviewer_id' in filters:
-                query = query.filter(Interview.interviewer_id == filters['interviewer_id'])
-            if 'job_id' in filters:
-                query = query.filter(Interview.job_id == filters['job_id'])
+    def get_by_date_range(self, start_date: datetime, end_date: datetime) -> List[InterviewSchedule]:
+        """Get all schedules within a date range"""
+        return self._model.query.filter(
+            InterviewSchedule.start_datetime >= start_date,
+            InterviewSchedule.end_datetime <= end_date
+        ).all()
+
+    def get_with_filters(self, filters: Dict) -> List[InterviewSchedule]:
+        """Get schedules with applied filters"""
+        query = self._model.query
+
+        if filters.get('status'):
+            query = query.filter_by(status=InterviewStatus(filters['status']))
+
+        if filters.get('candidate_id'):
+            query = query.filter_by(candidate_id=filters['candidate_id'])
+
+        if filters.get('start_date') and filters.get('end_date'):
+            query = query.filter(
+                InterviewSchedule.start_datetime >= filters['start_date'],
+                InterviewSchedule.end_datetime <= filters['end_date']
+            )
 
         return query.all()
 
-    def get_interview_by_id(self, interview_id):
-        return self.__db.session.query(Interview).filter_by(id=interview_id).first()
+    def update_status(self, schedule_id: str, status: InterviewStatus) -> Optional[InterviewSchedule]:
+        """Update the status of an interview schedule"""
+        schedule = self.get_by_id(schedule_id)
+        if schedule:
+            schedule.status = status
+            return self.update(schedule)
+        return None
 
-    def save_interview(self, interview):
-        self.__db.session.add(interview)
-        self.__db.session.commit()
-        return interview
 
-    def update_interview(self, interview):
-        self.__db.session.commit()
-        return interview
+class EmailNotificationRepository(BaseRepository[EmailNotification]):
+    def __init__(self):
+        super().__init__(EmailNotification)
 
-    def delete_interview(self, interview_id):
-        interview = self.get_interview_by_id(interview_id)
-        if interview:
-            self.__db.session.delete(interview)
-            self.__db.session.commit()
+    def get_by_candidate_id(self, candidate_id: str) -> List[EmailNotification]:
+        """Get all email notifications for a candidate"""
+        return self._model.query.filter_by(candidate_id=candidate_id).all()
 
-    def check_interviewer_availability(self, interviewer_id, scheduled_date, duration_minutes):
-        """Check if interviewer has any conflicting interviews"""
-        end_time = scheduled_date + datetime.timedelta(minutes=duration_minutes)
-
-        conflicts = self.__db.session.query(Interview).filter(
-            Interview.interviewer_id == interviewer_id,
-            Interview.status == InterviewStatus.SCHEDULED,
-            Interview.scheduled_date < end_time,
-            (Interview.scheduled_date + datetime.timedelta(minutes=Interview.duration_minutes)) > scheduled_date
-        ).all()
-
-        return len(conflicts) == 0
+    def create_notification(self, notification_data: Dict) -> EmailNotification:
+        """Create a new email notification"""
+        notification = EmailNotification(**notification_data)
+        return self.create(notification)

@@ -5,14 +5,13 @@ from src.Helpers.ErrorHandling import CustomError
 from src.Modules.Candidate.CandidateDTOs import CandidateDTO
 from src.Modules.Candidate.CandidateModels import Candidate, CandidateStatus, CandidatePipelineStatus
 from src.Modules.Candidate.CandidateRepository import CandidateRepository
-from src.Modules.Interviews.InterviewDTOs import InterviewDTO
-from src.Modules.Interviews.InterviewServices import InterviewService
+
 
 
 class CandidateService:
     def __init__(self):
         self.__candidate_repository = CandidateRepository()
-        self.__interview_service = InterviewService()
+        # self.__interview_service = InterviewService()
 
     def fetch_all(self, filters=None):
         try:
@@ -79,34 +78,34 @@ class CandidateService:
         except Exception as e:
             raise CustomError(str(e), 400)
 
-    def schedule_interview(self, candidate_id, interview_data):
-        try:
-            candidate = self.__candidate_repository.get_candidate_by_id(candidate_id)
-            if not candidate:
-                raise CustomError("Candidate not found", 404)
-
-            # Update candidate status
-            candidate.status = CandidateStatus.INTERVIEWING
-            self.__candidate_repository.update_candidate(candidate)
-
-            # Create interview
-            interview_data['candidate_id'] = candidate_id
-            interview_data['job_id'] = candidate.job_id
-
-            return self.__interview_service.schedule_interview(interview_data)
-        except Exception as e:
-            raise CustomError(str(e), 400)
-
-    def get_candidate_interviews(self, candidate_id):
-        try:
-            candidate = self.__candidate_repository.get_candidate_by_id(candidate_id)
-            if not candidate:
-                raise CustomError("Candidate not found", 404)
-
-            # Interviews are loaded through the relationship
-            return InterviewDTO(many=True).dump(candidate.interviews)
-        except Exception as e:
-            raise CustomError(str(e), 400)
+    # def schedule_interview(self, candidate_id, interview_data):
+    #     try:
+    #         candidate = self.__candidate_repository.get_candidate_by_id(candidate_id)
+    #         if not candidate:
+    #             raise CustomError("Candidate not found", 404)
+    #
+    #         # Update candidate status
+    #         candidate.status = CandidateStatus.INTERVIEWING
+    #         self.__candidate_repository.update_candidate(candidate)
+    #
+    #         # Create interview
+    #         interview_data['candidate_id'] = candidate_id
+    #         interview_data['job_id'] = candidate.job_id
+    #
+    #         return self.__interview_service.schedule_interview(interview_data)
+    #     except Exception as e:
+    #         raise CustomError(str(e), 400)
+    #
+    # def get_candidate_interviews(self, candidate_id):
+    #     try:
+    #         candidate = self.__candidate_repository.get_candidate_by_id(candidate_id)
+    #         if not candidate:
+    #             raise CustomError("Candidate not found", 404)
+    #
+    #         # Interviews are loaded through the relationship
+    #         return InterviewDTO(many=True).dump(candidate.interviews)
+    #     except Exception as e:
+    #         raise CustomError(str(e), 400)
 
     def update_candidate_status(self, candidate_id, new_status):
         try:

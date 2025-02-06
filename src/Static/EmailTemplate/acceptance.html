@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .interview-details {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Congratulations {{candidate_name}}!</h2>
+    </div>
+
+    <div class="content">
+        {{email_content}}
+
+        <div class="interview-details">
+            <h3>Interview Details</h3>
+            <p><strong>Date:</strong> {{interview_date}}</p>
+            <p><strong>Time:</strong> {{interview_time}}</p>
+            <p><strong>Location:</strong> {{interview_location}}</p>
+        </div>
+
+        <p>Please confirm your attendance by clicking the button below:</p>
+        <a href="{{confirmation_link}}" class="button">Confirm Interview</a>
+    </div>
+
+    <div class="footer">
+        <p>Best regards,<br>The Hiring Team</p>
+        <p><small>This is an automated email. Please do not reply directly to this message.</small></p>
+    </div>
+</body>
+</html>

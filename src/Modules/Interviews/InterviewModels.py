@@ -1,52 +1,34 @@
 from enum import Enum
 from datetime import datetime
 import uuid
-from sqlalchemy import Enum as SqlEnum
-
 from src.config.DBModelsConfig import db
-
 
 class InterviewStatus(Enum):
     SCHEDULED = "scheduled"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
-    RESCHEDULED = "rescheduled"
-    NO_SHOW = "no_show"
 
-
-class InterviewType(Enum):
-    PHONE_SCREENING = "phone_screening"
-    TECHNICAL = "technical"
-    HR = "hr"
-    SYSTEM_DESIGN = "system_design"
-    BEHAVIORAL = "behavioral"
-    FINAL = "final"
-
-
-class Interview(db.Model):
-    __tablename__ = 'interviews'
+class InterviewSchedule(db.Model):
+    __tablename__ = 'interview_schedules'
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    job_id = db.Column(db.String(36), db.ForeignKey('jobs.id'), nullable=False)
     candidate_id = db.Column(db.String(36), db.ForeignKey('candidates.id'), nullable=False)
-    interviewer_id = db.Column(db.String(36), db.ForeignKey('users.user_id'), nullable=False)
-
-    interview_type = db.Column(SqlEnum(InterviewType), nullable=False)
-    status = db.Column(SqlEnum(InterviewStatus), nullable=False, default=InterviewStatus.SCHEDULED)
-
-    scheduled_date = db.Column(db.DateTime, nullable=False)
-    duration_minutes = db.Column(db.Integer, nullable=False)
+    interviewer_id = db.Column(db.String(36), nullable=False)
+    start_datetime = db.Column(db.DateTime, nullable=False)
+    end_datetime = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.Enum(InterviewStatus), default=InterviewStatus.SCHEDULED)
     location = db.Column(db.String(255), nullable=True)  # Can be meeting link or physical location
-    meeting_link = db.Column(db.String(255), nullable=True)
-
     notes = db.Column(db.Text, nullable=True)
-    feedback = db.Column(db.Text, nullable=True)
-    score = db.Column(db.Float, nullable=True)
-
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    cancelled_at = db.Column(db.DateTime, nullable=True)
-    cancellation_reason = db.Column(db.Text, nullable=True)
 
-    def __repr__(self):
-        return f"<Interview {self.id} for Candidate {self.candidate_id}>"
+class EmailNotification(db.Model):
+    __tablename__ = 'email_notifications'
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    candidate_id = db.Column(db.String(36), db.ForeignKey('candidates.id'), nullable=False)
+    email_type = db.Column(db.String(50), nullable=False)  # 'accepted' or 'rejected'
+    subject = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(50), default='pending')  # pending, sent, failed

@@ -4,6 +4,7 @@ import threading
 from flask import Flask
 from marshmallow import ValidationError
 
+from src.Controllers.AdminController import ADMIN_CONTROLLER
 # from api.config import config
 from src.config.AppSettings import createApp
 
@@ -41,7 +42,7 @@ def main():
     ]
 
     # Blueprints
-    blueprints = [AUTH_CONTROLLER,MONITOR_CONTROLLER]#MONITOR_CONTROLLER
+    blueprints = [AUTH_CONTROLLER,MONITOR_CONTROLLER, ADMIN_CONTROLLER]
 
     # Load configuration
     config = Config()
@@ -58,7 +59,8 @@ def main():
         options = {
             "host": config.getConfig()["server"]["ip"],
             "port": config.getConfig()["server"]["port"],
-            "debug": config.getConfig()["server"]["debug"]
+            "debug": config.getConfig()["server"]["debug"],
+            "use_reloader": False
         }
 
         app.run(**options)

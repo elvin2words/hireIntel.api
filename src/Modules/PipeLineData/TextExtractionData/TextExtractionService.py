@@ -14,7 +14,7 @@ from src.Modules.PipeLineData.TextExtractionData.TextExtractionRepository import
     TechnicalSkillRepository, SoftSkillRepository, KeywordRepository
 )
 
-class ResumeService:
+class TextExtractionDataService:
     def __init__(self):
         self.__resume_repository = ResumeRepository()
         self.__education_repository = EducationRepository()
@@ -57,10 +57,85 @@ class ResumeService:
         except Exception as e:
             raise CustomError(str(e), 400)
 
-    def create_resume(self, resume_data: Dict) -> Dict:
+    def get_resume_by_candidate_id(self, candidate_id: str) -> Dict:
+        """
+        Get a single candidate by ID
+        Returns a resume DTO
+        """
+        try:
+            print("Inside resume get Service")
+            resumes = self.__resume_repository.get_by_candidate_id(candidate_id)
+            print("this is my resume: ", resumes)
+
+            if not resumes or len(resumes) == 0:
+                raise CustomError("Resume not found", 404)
+
+            # Take the first resume since we expect one resume per candidate
+            resume = resumes[0]
+
+            # Transform the data to match DTO structure
+            resume_data = {
+                'personal_information': {
+                    'full_name': resume.full_name,
+                    'email': resume.email,
+                    'phone_numbers': resume.phone_numbers,
+                    'address': resume.address,
+                    'linkedin_url': resume.linkedin_url,
+                    'github_url': resume.github_url,
+                    'portfolio_url': resume.portfolio_url
+                },
+                'education': [
+                    {
+                        'institution': edu.institution,
+                        'degree': edu.degree,
+                        'field_of_study': edu.field_of_study,
+                        'start_date': edu.start_date,
+                        'end_date': edu.end_date,
+                        'gpa': edu.gpa,
+                        'description': edu.description,
+                        'location': edu.location
+                    } for edu in resume.education
+                ],
+                'work_experience': [
+                    {
+                        'company': exp.company,
+                        'position': exp.position,
+                        'employment_type': exp.employment_type,
+                        'start_date': exp.start_date,
+                        'end_date': exp.end_date,
+                        'is_current': exp.is_current,
+                        'location': exp.location,
+                        'description': exp.description,
+                        'achievements': exp.achievements
+                    } for exp in resume.work_experience
+                ],
+                'technical_skills': [
+                    {
+                        'skill_name': skill.skill_name,
+                        'proficiency_level': skill.proficiency_level,
+                        'years_experience': skill.years_experience
+                    } for skill in resume.technical_skills
+                ],
+                'soft_skills': [
+                    {
+                        'skill_name': skill.skill_name
+                    } for skill in resume.soft_skills
+                ],
+                'keywords': [
+                    {
+                        'keyword': kw.keyword,
+                        'category': kw.category
+                    } for kw in resume.keywords
+                ]
+            }
+
+            return self.__resume_dto.dump(resume_data)
+        except Exception as e:
+            raise CustomError(str(e), 400)
+
+    def create_resume(self, resume_data: Dict, candidate_id: str) -> Dict:
         """
         Create a new resume with all related entities
-        Returns a resume DTO
         """
         try:
             # Validate input data using DTO
@@ -68,21 +143,19 @@ class ResumeService:
             if errors:
                 raise CustomError(f"Invalid resume data: {errors}", 400)
 
-            # Check if resume with email already exists
-            if self.__resume_repository.get_by_email(resume_data['email']):
-                raise CustomError("Resume with this email already exists", 400)
+            personal_info = resume_data['personalInformation']
 
             # Create main resume record
             resume = Resume(
                 id=str(uuid.uuid4()),
-                candidate_id=resume_data['candidate_id'],
-                email=resume_data['email'],
-                full_name=resume_data['full_name'],
-                phone_numbers=resume_data.get('phone_numbers'),
-                address=resume_data.get('address'),
-                linkedin_url=resume_data.get('linkedin_url'),
-                github_url=resume_data.get('github_url'),
-                portfolio_url=resume_data.get('portfolio_url')
+                candidate_id=candidate_id,
+                full_name=personal_info['fullName'],
+                email=personal_info['email'],
+                phone_numbers=personal_info.get('phoneNumbers'),
+                address=personal_info.get('address'),
+                linkedin_url=personal_info.get('linkedinUrl'),
+                github_url=personal_info.get('githubUrl'),
+                portfolio_url=personal_info.get('portfolioUrl')
             )
 
             # Save the resume
@@ -90,25 +163,74 @@ class ResumeService:
 
             # Create education records
             if 'education' in resume_data:
-                self.__create_education_records(resume.id, resume_data['education'])
+                for edu_data in resume_data['education']:
+                    education = Education(
+                        id=str(uuid.uuid4()),
+                        resume_id=resume.id,
+                        institution=edu_data['institution'],
+                        degree=edu_data['degree'],
+                        field_of_study=edu_data.get('fieldOfStudy'),
+                        start_date=edu_data.get('startDate'),
+                        end_date=edu_data.get('endDate'),
+                        gpa=edu_data.get('gpa'),
+                        description=edu_data.get('description'),
+                        location=edu_data.get('location')
+                    )
+                    self.__education_repository.create(education)
 
             # Create work experiences
-            if 'experiences' in resume_data:
-                self.__create_experience_records(resume.id, resume_data['experiences'])
+            if 'workExperience' in resume_data:
+                for exp_data in resume_data['workExperience']:
+                    experience = WorkExperience(
+                        id=str(uuid.uuid4()),
+                        resume_id=resume.id,
+                        company=exp_data['company'],
+                        position=exp_data['position'],
+                        employment_type=exp_data.get('employmentType'),
+                        start_date=exp_data.get('startDate'),
+                        end_date=exp_data.get('endDate'),
+                        is_current=exp_data.get('isCurrent', False),
+                        location=exp_data.get('location'),
+                        description=exp_data.get('description'),
+                        achievements=exp_data.get('achievements')
+                    )
+                    self.__experience_repository.create(experience)
 
             # Create technical skills
-            if 'technical_skills' in resume_data:
-                self.__create_technical_skill_records(resume.id, resume_data['technical_skills'])
+            if 'technicalSkills' in resume_data:
+                for skill_data in resume_data['technicalSkills']:
+                    skill = TechnicalSkill(
+                        id=str(uuid.uuid4()),
+                        resume_id=resume.id,
+                        skill_name=skill_data['skillName'],
+                        proficiency_level=skill_data.get('proficiencyLevel'),
+                        years_experience=skill_data.get('yearsExperience')
+                    )
+                    self.__technical_skill_repository.create(skill)
 
             # Create soft skills
-            if 'soft_skills' in resume_data:
-                self.__create_soft_skill_records(resume.id, resume_data['soft_skills'])
+            if 'softSkills' in resume_data:
+                for skill_data in resume_data['softSkills']:
+                    skill = SoftSkill(
+                        id=str(uuid.uuid4()),
+                        resume_id=resume.id,
+                        skill_name=skill_data['skillName']
+                    )
+                    self.__soft_skill_repository.create(skill)
 
             # Create keywords
             if 'keywords' in resume_data:
-                self.__create_keyword_records(resume.id, resume_data['keywords'])
+                for keyword_data in resume_data['keywords']:
+                    keyword = Keyword(
+                        id=str(uuid.uuid4()),
+                        resume_id=resume.id,
+                        keyword=keyword_data['keyword'],
+                        category=keyword_data.get('category')
+                    )
+                    self.__keyword_repository.create(keyword)
 
             return self.get_resume_by_id(resume.id)
+
         except Exception as e:
             raise CustomError(str(e), 400)
 
@@ -142,11 +264,11 @@ class ResumeService:
             if 'experiences' in resume_data:
                 self.__update_experience_records(resume.id, resume_data['experiences'])
 
-            if 'technical_skills' in resume_data:
-                self.__update_technical_skill_records(resume.id, resume_data['technical_skills'])
+            if 'technicalSkills' in resume_data:
+                self.__update_technical_skill_records(resume.id, resume_data['technicalSkills'])
 
-            if 'soft_skills' in resume_data:
-                self.__update_soft_skill_records(resume.id, resume_data['soft_skills'])
+            if 'softSkills' in resume_data:
+                self.__update_soft_skill_records(resume.id, resume_data['softSkills'])
 
             if 'keywords' in resume_data:
                 self.__update_keyword_records(resume.id, resume_data['keywords'])

@@ -12,7 +12,7 @@ Job.soft_skills = db.relationship('JobSoftSkill', backref='job', lazy=True, casc
 Job.education_requirements = db.relationship('JobEducation', backref='job', lazy=True, cascade="all, delete-orphan")
 
 Candidate.job = db.relationship('Job', back_populates='candidates', lazy='joined')
-Candidate.interviews = db.relationship('Interview', backref='candidate', lazy='joined')
+# Candidate.interviews = db.relationship('Interview', backref='candidate', lazy='joined')
 
 # Function to initialize all models
 def init_models():
