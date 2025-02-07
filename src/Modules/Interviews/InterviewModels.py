@@ -19,6 +19,8 @@ class InterviewSchedule(db.Model):
     status = db.Column(db.Enum(InterviewStatus), default=InterviewStatus.SCHEDULED)
     location = db.Column(db.String(255), nullable=True)  # Can be meeting link or physical location
     notes = db.Column(db.Text, nullable=True)
+    meeting_link = db.Column(db.String(255), nullable=True)
+    # schedule_metadata = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

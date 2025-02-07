@@ -72,7 +72,6 @@ class MailService:
             recipient: str,
             body: str,
             is_html: bool = True,
-            attachments: Optional[List[str]] = None
     ) -> None:
         """
         Send email with optional attachments
@@ -82,7 +81,6 @@ class MailService:
             recipient: Recipient email address
             body: Email body content
             is_html: Whether the body content is HTML (default: True)
-            attachments: List of file paths to attach (default: None)
         """
         try:
             self._connect_smtp()
@@ -95,19 +93,12 @@ class MailService:
             # Attach body
             msg.attach(MIMEText(body, 'html' if is_html else 'plain'))
 
-            # Attach files if any
-            if attachments:
-                for filepath in attachments:
-                    with open(filepath, 'rb') as file:
-                        part = MIMEApplication(file.read(), Name=os.path.basename(filepath))
-                        part['Content-Disposition'] = f'attachment; filename="{os.path.basename(filepath)}"'
-                        msg.attach(part)
-
             self.smtp_server.sendmail(
                 self.config.getConfig()["email"]["username"],
                 recipient,
                 msg.as_string()
             )
+
             print(f"Email sent successfully to {recipient}")
 
         except Exception as e:

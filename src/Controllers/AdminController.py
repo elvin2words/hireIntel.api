@@ -1,4 +1,5 @@
 import json
+import math
 import time
 from datetime import datetime, timezone
 
@@ -77,10 +78,11 @@ def close_job(job_id: str):
 #====================================
 
 @ADMIN_CONTROLLER.route('/interviews/schedule', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def schedule_interviews():
     """Schedule interviews for multiple candidates"""
     data = request.get_json()
+    print("the json data is : ", data)
     result = interviewService.process_candidates(data)
     return apiResponse(
         False,
@@ -161,15 +163,35 @@ def complete_interview(schedule_id: str):
 # Candidate Monitoring Endpoints
 # ====================================
 
+def paginate_data(data, page, per_page):
+    """Paginate the candidates data"""
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
 
-def format_monitor_data(candidates_data):
-    """Format the monitor data with proper structure"""
+    return {
+        "items": data[start_idx:end_idx],
+        "total": len(data),
+        "page": page,
+        "per_page": per_page,
+        "total_pages": math.ceil(len(data) / per_page)
+    }
+
+
+def format_monitor_data(candidates_data, page=1, per_page=10):
+    """Format the monitor data with proper structure and pagination"""
+    paginated_data = paginate_data(candidates_data, page, per_page)
+
     return {
         "error": False,
         "data": {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "candidates": candidates_data,
-            "total": len(candidates_data)
+            "candidates": paginated_data["items"],
+            "pagination": {
+                "total": paginated_data["total"],
+                "page": paginated_data["page"],
+                "per_page": paginated_data["per_page"],
+                "total_pages": paginated_data["total_pages"]
+            }
         },
         "msg": "Candidates status updated"
     }
@@ -178,16 +200,25 @@ def format_monitor_data(candidates_data):
 @ADMIN_CONTROLLER.route('/candidates/stream', methods=['GET'])
 # @jwt_required()  # Uncomment after testing
 def stream_candidates_status():
-    """Stream candidates status updates using Server-Sent Events"""
+    """Stream candidates status updates using Server-Sent Events with pagination"""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
 
     def generate():
         while True:
             try:
+                # Get the current page from query parameter
+                current_page = request.args.get('page', page, type=int)
+
                 # Fetch current candidates data
                 candidates = candidateService.fetch_all()
 
-                # Format the response data
-                monitor_data = format_monitor_data(candidates)
+                # Format the response data with pagination
+                monitor_data = format_monitor_data(
+                    candidates,
+                    page=current_page,
+                    per_page=per_page
+                )
 
                 # Send the event
                 yield f"data: {json.dumps(monitor_data)}\n\n"
@@ -215,3 +246,57 @@ def stream_candidates_status():
             'X-Accel-Buffering': 'no'
         }
     )
+
+# def format_monitor_data(candidates_data):
+#     """Format the monitor data with proper structure"""
+#     return {
+#         "error": False,
+#         "data": {
+#             "timestamp": datetime.now(timezone.utc).isoformat(),
+#             "candidates": candidates_data,
+#             "total": len(candidates_data)
+#         },
+#         "msg": "Candidates status updated"
+#     }
+#
+#
+# @ADMIN_CONTROLLER.route('/candidates/stream', methods=['GET'])
+# # @jwt_required()  # Uncomment after testing
+# def stream_candidates_status():
+#     """Stream candidates status updates using Server-Sent Events"""
+#
+#     def generate():
+#         while True:
+#             try:
+#                 # Fetch current candidates data
+#                 candidates = candidateService.fetch_all()
+#
+#                 # Format the response data
+#                 monitor_data = format_monitor_data(candidates)
+#
+#                 # Send the event
+#                 yield f"data: {json.dumps(monitor_data)}\n\n"
+#
+#                 # Wait before next update
+#                 time.sleep(1)
+#
+#             except Exception as e:
+#                 error_data = {
+#                     "error": True,
+#                     "data": None,
+#                     "msg": f"Error fetching candidates: {str(e)}",
+#                     "timestamp": datetime.now(timezone.utc).isoformat()
+#                 }
+#                 yield f"data: {json.dumps(error_data)}\n\n"
+#                 time.sleep(5)  # Wait longer on error
+#
+#     return Response(
+#         stream_with_context(generate()),
+#         mimetype='text/event-stream',
+#         headers={
+#             'Cache-Control': 'no-cache',
+#             'Content-Type': 'text/event-stream',
+#             'Connection': 'keep-alive',
+#             'X-Accel-Buffering': 'no'
+#         }
+#     )

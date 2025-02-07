@@ -11,6 +11,8 @@ class InterviewScheduleDTO(CamelCaseSchema):
     status = fields.Method("get_status")
     location = fields.Str(allow_none=True)
     notes = fields.Str(allow_none=True)
+    # schedule_metadata = fields.Dict(allow_none=True)
+    meeting_link = fields.Str(allow_none=True)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 

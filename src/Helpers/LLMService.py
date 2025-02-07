@@ -464,65 +464,65 @@ class LLMService:
         prompt = ""
         return prompt
 
-    def create_notification(self, prompt: str) -> Dict[str, Any]:
-        """
-        Creates and validates an email notification response from the LLM
-
-        Expected JSON format:
-        {
-            "subject": str,
-            "content": str,
-            "notification_type": str,  # "acceptance" or "rejection"
-            "personalization": {
-                "candidate_name": str,
-                "custom_fields": Dict[str, str]  # Additional personalization fields
-            },
-            "metadata": {
-                "priority": str,  # "high", "medium", "low"
-                "send_time": str  # ISO format datetime
-            }
-        }
-        """
-        try:
-            print("Starting notification creation...")
-            response_text = self.complete_prompt(prompt)
-
-            if not response_text:
-                raise ValueError("Empty response from LLM")
-
-            parsed_data = self.__extract_json_from_response(response_text)
-
-            # Validate required fields
-            required_fields = ['subject', 'content', 'notification_type', 'personalization', 'metadata']
-            missing_fields = [f for f in required_fields if f not in parsed_data]
-            if missing_fields:
-                raise ValueError(f"Missing required fields: {missing_fields}")
-
-            # Validate personalization fields
-            if not isinstance(parsed_data['personalization'], dict) or \
-                    'candidate_name' not in parsed_data['personalization']:
-                raise ValueError("Invalid personalization data")
-
-            # Validate notification type
-            valid_types = ['acceptance', 'rejection']
-            if parsed_data['notification_type'] not in valid_types:
-                raise ValueError(f"Invalid notification type. Must be one of: {valid_types}")
-
-            # Validate metadata
-            valid_priorities = ['high', 'medium', 'low']
-            if parsed_data['metadata']['priority'] not in valid_priorities:
-                raise ValueError(f"Invalid priority. Must be one of: {valid_priorities}")
-
-            try:
-                # Validate datetime format
-                datetime.fromisoformat(parsed_data['metadata']['send_time'])
-            except ValueError:
-                raise ValueError("Invalid datetime format in send_time")
-
-            return parsed_data
-
-        except Exception as e:
-            raise Exception(f"Notification creation failed: {str(e)}")
+    # def create_notification(self, prompt: str) -> Dict[str, Any]:
+    #     """
+    #     Creates and validates an email notification response from the LLM
+    #
+    #     Expected JSON format:
+    #     {
+    #         "subject": str,
+    #         "content": str,
+    #         "notification_type": str,  # "acceptance" or "rejection"
+    #         "personalization": {
+    #             "candidate_name": str,
+    #             "custom_fields": Dict[str, str]  # Additional personalization fields
+    #         },
+    #         "metadata": {
+    #             "priority": str,  # "high", "medium", "low"
+    #             "send_time": str  # ISO format datetime
+    #         }
+    #     }
+    #     """
+    #     try:
+    #         print("Starting notification creation...")
+    #         response_text = self.complete_prompt(prompt)
+    #
+    #         if not response_text:
+    #             raise ValueError("Empty response from LLM")
+    #
+    #         parsed_data = self.__extract_json_from_response(response_text)
+    #
+    #         # Validate required fields
+    #         required_fields = ['subject', 'content', 'notification_type', 'personalization', 'metadata']
+    #         missing_fields = [f for f in required_fields if f not in parsed_data]
+    #         if missing_fields:
+    #             raise ValueError(f"Missing required fields: {missing_fields}")
+    #
+    #         # Validate personalization fields
+    #         if not isinstance(parsed_data['personalization'], dict) or \
+    #                 'candidate_name' not in parsed_data['personalization']:
+    #             raise ValueError("Invalid personalization data")
+    #
+    #         # Validate notification type
+    #         valid_types = ['acceptance', 'rejection']
+    #         if parsed_data['notification_type'] not in valid_types:
+    #             raise ValueError(f"Invalid notification type. Must be one of: {valid_types}")
+    #
+    #         # Validate metadata
+    #         valid_priorities = ['high', 'medium', 'low']
+    #         if parsed_data['metadata']['priority'] not in valid_priorities:
+    #             raise ValueError(f"Invalid priority. Must be one of: {valid_priorities}")
+    #
+    #         try:
+    #             # Validate datetime format
+    #             datetime.fromisoformat(parsed_data['metadata']['send_time'])
+    #         except ValueError:
+    #             raise ValueError("Invalid datetime format in send_time")
+    #
+    #         return parsed_data
+    #
+    #     except Exception as e:
+    #         raise Exception(f"Notification creation failed: {str(e)}")
 
     def create_interview_schedule(self, prompt: str) -> Dict[str, Any]:
         """
@@ -530,7 +530,6 @@ class LLMService:
 
         Expected JSON format:
         {
-            "schedule_id": str,
             "interviews": [
                 {
                     "candidate_id": str,
@@ -564,7 +563,7 @@ class LLMService:
             parsed_data = self.__extract_json_from_response(response_text)
 
             # Validate required top-level fields
-            required_fields = ['schedule_id', 'interviews', 'constraints_satisfied', 'schedule_metadata']
+            required_fields = ['interviews', 'constraints_satisfied', 'schedule_metadata']
             missing_fields = [f for f in required_fields if f not in parsed_data]
             if missing_fields:
                 raise ValueError(f"Missing required fields: {missing_fields}")
@@ -616,4 +615,24 @@ class LLMService:
         except Exception as e:
             raise Exception(f"Interview schedule creation failed: {str(e)}")
 
+
+    def generate_notification_email(self, prompt: str) -> Dict[str, Any]:
+        """
+        Creates a notification email using the provided prompt
+        Returns validated notification data structure
+        """
+        try:
+            response_text = self.complete_prompt(prompt)
+            parsed_data = self.__extract_json_from_response(response_text)
+
+            # Validate required fields
+            required_fields = ['subject', 'content', 'notification_type', 'personalization', 'metadata']
+            missing_fields = [f for f in required_fields if f not in parsed_data]
+            if missing_fields:
+                raise ValueError(f"Missing required fields in notification data: {missing_fields}")
+
+            return parsed_data
+
+        except Exception as e:
+            raise Exception(f"Failed to generate notification email: {str(e)}")
 

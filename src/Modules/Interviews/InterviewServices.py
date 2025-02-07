@@ -2,20 +2,20 @@
 import json
 from datetime import datetime
 from typing import List, Dict, Any, TypedDict, Optional
-from pathlib import Path
-from jinja2 import Environment, FileSystemLoader
 from marshmallow import Schema, fields, validates, ValidationError
 from src.Helpers.ErrorHandling import CustomError
 from src.Helpers.LLMService import LLMService
 from src.Modules.Interviews.InterviewDTOs import InterviewScheduleDTO
-from src.Modules.Interviews.InterviewModels import InterviewSchedule, EmailNotification, InterviewStatus
+from src.Modules.Interviews.InterviewModels import InterviewSchedule, InterviewStatus
+from src.Modules.Interviews.InterviewNotificationService import InterviewNotificationService, NotificationType
 from src.Modules.Interviews.InterviewRepository import InterviewScheduleRepository, EmailNotificationRepository
 from src.Modules.Candidate.CandidateService import CandidateService
 from src.Modules.PipeLineData.ProfileCreationData.ProfileCreationService import CandidateProfileDataService
 
 
 class InterviewScheduleRequestSchema(Schema):
-    candidate_ids = fields.List(fields.Str(required=True), required=True)
+    accepted_candidate_ids = fields.List(fields.Str(required=True), required=True)
+    rejected_candidate_ids = fields.List(fields.Str(required=True), required=True)
     start_date = fields.DateTime(required=True)
     end_date = fields.DateTime(required=True)
 
@@ -43,15 +43,10 @@ class InterviewSchedulerService:
         self.__llm_service = LLMService()
         self.__request_schema = InterviewScheduleRequestSchema()
         self.__candidate_profile = CandidateProfileDataService()
-
-        # Initialize Jinja2 environment for email templates
-        template_dir = Path(__file__).parent.parent.parent / 'static' / 'email_templates'
-        self.__jinja_env = Environment(
-            loader=FileSystemLoader(str(template_dir)),
-            autoescape=True
-        )
+        self.__notificationService = InterviewNotificationService()
 
 
+    #Todo: make it so that the meeting link is configured on the database front end
     def process_candidates(self, request_data: Dict[str, Any]) -> ProcessCandidatesResponse:
         """
         Process candidates for interview scheduling
@@ -75,16 +70,23 @@ class InterviewSchedulerService:
             hired_candidates = []
             rejected_candidates = []
 
-            # Categorize candidates based on status
-            for candidate_id in validated_data['candidate_ids']:
-                candidate = self.__candidate_service.fetch_by_id(candidate_id)
-                if not candidate:
-                    raise CustomError(f"Candidate not found: {candidate_id}", 404)
-
-                if candidate.get('status') == 'HIRED':
+            if 'accepted_candidate_ids' in validated_data:
+                # Categorize candidates based on status
+                for candidate_id in validated_data['accepted_candidate_ids']:
+                    candidate = self.__candidate_service.fetch_by_id(candidate_id)
+                    if not candidate:
+                        raise CustomError(f"Candidate not found: {candidate_id}", 404)
                     hired_candidates.append(candidate)
-                elif candidate.get('status') == 'REJECTED':
+
+            if 'rejected_candidate_ids' in validated_data:
+                for candidate_id in validated_data['rejected_candidate_ids']:
+                    candidate = self.__candidate_service.fetch_by_id(candidate_id)
+                    if not candidate:
+                        raise CustomError(f"Candidate not found: {candidate_id}", 404)
                     rejected_candidates.append(candidate)
+
+            print("hired candidates: ", hired_candidates)
+            print("rejected candidates: ", rejected_candidates)
 
             response: ProcessCandidatesResponse = {
                 'hired_candidates': [c.get('id') for c in hired_candidates],
@@ -108,6 +110,7 @@ class InterviewSchedulerService:
                 schedule_schema = InterviewScheduleDTO(many=True)
                 response['schedules'] = schedule_schema.dump(schedules)
 
+            print(f"My schedules : {response['schedules']}")
             # Process rejected candidates
             if rejected_candidates:
                 self._send_rejection_emails(rejected_candidates)
@@ -285,7 +288,7 @@ class InterviewSchedulerService:
         except Exception as e:
             raise CustomError(f"Failed to complete interview schedule: {str(e)}", 400)
 
-    def _schedule_interviews(self, candidates: List[Dict], start_date: datetime, end_date: datetime) -> List[Dict]:
+    def _schedule_interviews(self, candidates: List[Dict], start_date: datetime, end_date: datetime) -> List[InterviewSchedule]:
         """Schedule interviews for candidates within the specified date range"""
         try:
             # Format dates
@@ -298,7 +301,7 @@ class InterviewSchedulerService:
                 first_name = candidate.get('first_name', '')
                 last_name = candidate.get('last_name', '')
                 details = {
-                    'id': candidate.get('id'),
+                    'candidate_id': candidate.get('id'),
                     'name': f"{first_name} {last_name}",
                     'position': candidate.get('position', 'Not specified')
                 }
@@ -313,15 +316,16 @@ class InterviewSchedulerService:
             - Date Range: {start_date_str} to {end_date_str}
             - Business Hours: 9:00 AM to 5:00 PM
             - Maximum 4 interviews per day
-            - 1 hour duration per interview
-            - 1 hour break between interviews
-
+            - 2 hour duration per interview
+            - 2 hour break between interviews
+            - For candidate id make sure to use the exact candidate id given on candidate details
+            - For interview id use system00
+            
             Candidate Details:
             {candidates_json}
 
             Return a schedule that follows this exact JSON structure:
             {{
-                "schedule_id": str,
                 "interviews": [
                     {{
                         "candidate_id": str,
@@ -355,7 +359,7 @@ class InterviewSchedulerService:
                 raise CustomError("Could not create schedule satisfying all constraints", 400)
 
             # Create interview schedules
-            created_schedules = []
+            created_schedules = [] #Todo : should handle the meta data in a different table
             for interview in schedule_response['interviews']:
                 interview_schedule = InterviewSchedule(
                     candidate_id=interview['candidate_id'],
@@ -364,7 +368,7 @@ class InterviewSchedulerService:
                     end_datetime=datetime.fromisoformat(interview['end_datetime']),
                     status=InterviewStatus.SCHEDULED,
                     location=interview['location']['type'],
-                    meeting_link=interview.get('meeting_link')
+                    meeting_link="https://us02web.zoom.us/j/1234567890?pwd=a1b2C3dEfGhI4JKlMnOpQ" # Todo: example, real link should be configured
                 )
                 created_schedule = self.__interview_repo.create(interview_schedule)
                 created_schedules.append(created_schedule)
@@ -463,10 +467,10 @@ class InterviewSchedulerService:
             }
         }
 
-
-    def _format_interview_details(self, schedule: Dict) -> dict:
-        """Format interview schedule details"""
-        start_time = schedule.get('start_datetime')
+    @staticmethod
+    def _format_interview_details(schedule: InterviewSchedule) -> dict:
+        """Format interview schedule details from an InterviewSchedule object"""
+        start_time = schedule.start_datetime
         interview_date = "TBD"
         interview_time = "TBD"
 
@@ -477,46 +481,39 @@ class InterviewSchedulerService:
         return {
             'date': interview_date,
             'time': interview_time,
-            'location': schedule.get('location', 'Virtual'),
-            'confirmation_link': "https://your-domain.com/confirm-interview/{}".format(schedule.get('id', ''))
+            'location': schedule.location,
+            'confirmation_link': "https://us02web.zoom.us/j/1234567890?pwd=a1b2C3dEfGhI4JKlMnOpQ" # Todo: example, real link should be configured
         }
 
 
-    def _send_email(self, template_name: str, email_data: Dict, notification_type: str) -> None:
-        """Send email using template and data"""
-        template = self.__jinja_env.get_template(template_name)
-        email_content = template.render(**email_data)
-
-        email = EmailNotification(
-            candidate_id=email_data.get('candidate_id'),
-            email_type=notification_type,
-            subject=email_data.get('subject'),
-            content=email_content
-        )
-        self.__email_repo.create(email)
-
-
-    def _send_acceptance_emails(self, candidates: List[Dict], schedules: List[Dict]) -> None:
+    def _send_acceptance_emails(self, candidates: List[Dict], schedules: List[InterviewSchedule]) -> None:
         """Send acceptance emails to hired candidates with their interview schedules"""
         for candidate in candidates:
             try:
+                print("Inside send_acceptance_emails:")
+                print(f"candidate: {candidate}")
                 # Get basic candidate info
-                first_name = candidate.get('first_name', '')
-                last_name = candidate.get('last_name', '')
+                first_name = candidate['firstName']
+                last_name = candidate['lastName']
                 candidate_name = f"{first_name} {last_name}"
-                position = candidate.get('position', 'the position')
+                position = candidate['job']['title']
+
+                print("My schedules are : {}".format(schedules))
 
                 # Get schedule
                 schedule = next(
-                    (s for s in schedules if s.get('candidate_id') == candidate.get('id')),
+                    (s for s in schedules if s.candidate_id == candidate['id']),
                     None
                 )
+
                 if not schedule:
                     raise CustomError(f"No schedule found for candidate {candidate_name}", 400)
 
                 # Get profile analysis and interview details
-                profile_data = self._process_profile_data(candidate.get('id'))
+                profile_data = self._process_profile_data(candidate["id"])
                 interview_details = self._format_interview_details(schedule)
+
+                print("This part worked well .... ")
 
                 # Format skills and achievements for the prompt
                 strong_skills_str = ', '.join(profile_data['technical_skills']['strong_skills']) or 'technical expertise'
@@ -524,38 +521,57 @@ class InterviewSchedulerService:
                     [p['name'] for p in profile_data['projects']['relevant_projects']]) or 'impressive project portfolio'
 
                 email_prompt = f"""
-                Create an enthusiastic and welcoming acceptance email for a candidate who has been selected for an interview.
-                Highlight their specific strengths and qualifications that led to their selection.
-    
-                Candidate Details:
-                - Name: {candidate_name}
-                - Position: {position}
-                - Overall Match Score: {profile_data['overall_score']}
-                - Key Technical Skills: {strong_skills_str}
-                - Years of Experience: {profile_data['experience']['years']}
-                - Notable Projects: {projects_str}
-    
-                Interview Details:
-                - Date: {interview_details['date']}
-                - Time: {interview_details['time']}
-                - Location: {interview_details['location']}
-    
-                Guidelines for Response:
-                1. Start with warm congratulations and excitement about their potential
-                2. Specifically mention their strong technical skills and experience that impressed us
-                3. Reference their years of experience and relevant project work
-                4. Include clear interview details and next steps
-                5. Maintain an enthusiastic and welcoming tone throughout
-                6. End with clear instructions about interview preparation and confirmation
-    
-                {self._get_acceptance_json_structure()}
-                """
+                                Create a friendly and professional interview invitation email. The tone should be warm but not overly formal.
+                
+                                Candidate Details:
+                                - Name: {candidate_name}
+                                - Position: {position}
+                                - Key Technical Skills: {strong_skills_str}
+                                - Notable Projects: {projects_str} (highlight max 2 most impressive projects)
+                
+                                Interview Details:
+                                - Date: {interview_details['date']}
+                                - Time: {interview_details['time']}
+                                - Location: {interview_details['location']}
+                
+                                Email Requirements:
+                                1. Start directly with positive news about moving forward
+                                2. Keep it brief and enthusiastic (2-3 short paragraphs)
+                                3. Mention one specific impressive aspect (project or skill)
+                                4. Clearly state interview details
+                                5. No sign-offs (Regards/Best/etc.)
+                                6. End with clear next steps about confirming attendance
+                    
+                                Must Exclude:
+                                - Any form of salutation or greeting
+                                - Make sure not to put Any sign-off or closing phrases (Regards/Best/etc.)
+                                - Placeholders or bracketed text
+                                - Corporate phrases like "at this time" or "future endeavors"
+                                - Generic statements about "applying again"
+                                - Complex instructions
+                    
+                                Content Structure:
+                                1. Start with excitement about their application
+                                2. Mention one specific impressive thing about their profile
+                                3. State interview details clearly
+                                4. End with simple confirmation instructions
+                    
+                                Example Format:
+                                "We're excited to move forward... [enthusiasm about their specific skill/project]
+                                [clear interview details]
+                                [simple confirmation request]"
+                
+                                {self._get_acceptance_json_structure()}
+                                """
 
-                email_response = self.__llm_service.create_notification(email_prompt)
+                print("Prompt created successfully")
+                email_response = self.__llm_service.generate_notification_email(email_prompt)
+
+                print("This is my email response: {}".format(email_response))
 
                 # Prepare and send email
                 template_data = {
-                    'candidate_id': candidate.get('id'),
+                    'candidate_id': candidate["id"],
                     'candidate_name': email_response['personalization']['candidate_name'],
                     'subject': email_response['subject'],
                     'email_content': email_response['content'],
@@ -564,78 +580,127 @@ class InterviewSchedulerService:
                     'preparation_tips': email_response['personalization']['custom_fields']['preparation_tips']
                 }
 
-                self._send_email('acceptance.html', template_data, 'accepted')
+                print("template_data: {}".format(template_data))
+                # self._send_email('acceptance.html', template_data, 'accepted')
+
+                # Create and send notification
+                self.__notificationService.create_notification(
+                    candidate=candidate,
+                    notification_data=template_data,
+                    notification_type=NotificationType.ACCEPTANCE
+                )
 
             except Exception as e:
                 error_msg = "Failed to send acceptance email: {}".format(str(e))
                 raise CustomError(error_msg, 400)
 
-
     def _send_rejection_emails(self, candidates: List[Dict]) -> None:
         """Send rejection emails to candidates who weren't selected"""
         for candidate in candidates:
             try:
+                print("Inside send_rejection_emails:")
+                print(f"candidate: {candidate}")
+
                 # Get basic candidate info
-                first_name = candidate.get('first_name', '')
-                last_name = candidate.get('last_name', '')
+                first_name = candidate['firstName']
+                last_name = candidate['lastName']
                 candidate_name = f"{first_name} {last_name}"
-                position = candidate.get('position', 'the position')
+                position = candidate['job']['title']
 
                 # Get profile analysis
-                profile_data = self._process_profile_data(candidate.get('id'))
+                profile_data = self._process_profile_data(candidate["id"])
+
+                # Get technical skills data
+                tech_skills = profile_data['technical_skills']
+                strong_skills = tech_skills.get('strong_skills', [])
+                improvement_areas = tech_skills.get('improvement_areas', [])
+
+                # Get project data
+                projects = profile_data.get('projects', {}).get('relevant_projects', [])
+                project_names = [p.get('name', '') for p in projects if p.get('relevance', 0) > 0.7]
+
+                # Get experience data
+                experience = profile_data.get('experience', {})
+                years_exp = experience.get('years', 0)
+                relevant_roles = experience.get('relevant_roles', [])
+
+                # Format roles for content
+                role_highlights = []
+                for role in relevant_roles[:2]:  # Get top 2 most relevant roles
+                    if role.get('title') and role.get('company'):
+                        role_highlights.append(f"{role['title']} at {role['company']}")
 
                 email_prompt = f"""
-                Create a personalized, constructive, and actionable rejection email for a job candidate.
-                Focus on providing specific feedback and growth opportunities based on their profile analysis.
-    
-                Candidate Details:
+                Create a personal, genuine rejection email that sounds completely human. The email should be concise and warm.
+
+                Candidate Profile:
                 - Name: {candidate_name}
                 - Position: {position}
-                - Overall Match Score: {profile_data['overall_score']}
-    
-                Technical Skills Analysis:
-                - Score: {profile_data['technical_skills']['score']}
-                - Areas for Improvement: {', '.join(profile_data['technical_skills']['improvement_areas'])}
-                - Missing Critical Skills: {', '.join(profile_data['technical_skills']['missing_skills'])}
-    
-                Experience Analysis:
-                - Score: {profile_data['experience']['score']}
-                - Years of Experience: {profile_data['experience']['years']}
-    
-                Professional Presence:
-                - Overall Score: {profile_data['social_presence']['score']}
-                - LinkedIn Activity: {profile_data['social_presence']['linkedin']}
-                - GitHub Contributions: {profile_data['social_presence']['github']}
-    
-                Guidelines for Response:
-                1. Start with a warm, personal greeting
-                2. Provide constructive feedback on areas of improvement
-                3. Include specific recommendations for skill development
-                4. Maintain an encouraging tone
-                5. End with future opportunities
-    
+                - Years of Experience: {years_exp}
+                - Strong Technical Skills: {', '.join(strong_skills[:3])}
+                - Notable Projects: {', '.join(project_names[:2])}
+                - Relevant Roles: {', '.join(role_highlights)}
+                - Areas for Development: {', '.join(improvement_areas[:2])}
+
+                Essential Requirements:
+                1. Write in a personal, conversational tone
+                2. Keep it brief (3 paragraphs maximum)
+                3. Reference one specific positive from their background (project/skill/role)
+                5. Suggest exactly one area for growth
+                6. Be direct but kind about the decision
+
+                Must Exclude:
+                - Placeholders or bracketed text
+                - Make sure not to put Any sign-off or closing phrases (Regards/Best/etc.)
+                - Abbreviations (use "for example" instead of "e.g.")
+                - Corporate phrases like "at this time" or "future endeavors"
+                - Mentions of "competitive process" or "other candidates"
+                - Generic statements about "applying again"
+
+                Structure:
+                1. Thank them for applying to {position}
+                2. State the decision clearly but kindly
+                3. Highlight one specific impressive aspect
+                4. Provide one specific growth suggestion
+
                 {self._get_rejection_json_structure()}
                 """
 
-                email_response = self.__llm_service.create_notification(email_prompt)
+                print("Creating rejection email prompt...")
+                email_response = self.__llm_service.generate_notification_email(email_prompt)
 
-                # Prepare and send email
+                print("Email response received:", email_response)
+
+                # Prepare template data
                 template_data = {
-                    'candidate_id': candidate.get('id'),
-                    'candidate_name': email_response['personalization']['candidate_name'],
-                    'subject': email_response['subject'],
+                    'candidate_id': candidate["id"],
+                    'candidate_name': candidate_name,
+                    'subject': "Update on Your Application",
                     'email_content': email_response['content'],
-                    'feedback': email_response['personalization']['custom_fields']['feedback']
+                    'feedback': {
+                        'improvement_areas': improvement_areas,
+                        'strong_skills': strong_skills,
+                        'experience_feedback': f"{years_exp} years of experience",
+                        'projects': project_names,
+                        'roles': role_highlights
+                    }
                 }
 
-                self._send_email('rejection.html', template_data, 'rejected')
+                print("Sending rejection notification...")
+                self.__notificationService.create_notification(
+                    candidate=candidate,
+                    notification_data=template_data,
+                    notification_type=NotificationType.REJECTION
+                )
 
             except Exception as e:
-                error_msg = "Failed to send rejection email: {}".format(str(e))
+                error_msg = f"Failed to send rejection email to {candidate['firstName'], candidate['lastName']}: {str(e)}"
+                print(f"Error in rejection email: {error_msg}")
                 raise CustomError(error_msg, 400)
 
 
-    def _get_acceptance_json_structure(self) -> str:
+    @staticmethod
+    def _get_acceptance_json_structure() -> str:
         """Return the JSON structure for acceptance emails"""
         return """
         Return a notification object with this exact JSON structure:
@@ -661,7 +726,8 @@ class InterviewSchedulerService:
         """
 
 
-    def _get_rejection_json_structure(self) -> str:
+    @staticmethod
+    def _get_rejection_json_structure() -> str:
         """Return the JSON structure for rejection emails"""
         return """
         Return a notification object with this exact JSON structure:

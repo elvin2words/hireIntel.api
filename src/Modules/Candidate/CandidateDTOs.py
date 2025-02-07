@@ -19,6 +19,7 @@ class CandidateDTO(CamelCaseSchema):
     current_position = fields.Str(allow_none=True)
     years_of_experience = fields.Int(allow_none=True)
     location = fields.Str(allow_none=True)
+    pipeline_status = fields.Method('get_pipeline_status')
 
     status = fields.Method("get_status")
     application_date = fields.DateTime(dump_only=True)
@@ -31,3 +32,6 @@ class CandidateDTO(CamelCaseSchema):
 
     def get_status(self, obj):
         return obj.status.value if hasattr(obj.status, 'value') else str(obj.status)
+
+    def get_pipeline_status(self, obj):
+        return obj.pipeline_status.value if hasattr(obj.pipeline_status, 'value') else str(obj.pipeline_status)
