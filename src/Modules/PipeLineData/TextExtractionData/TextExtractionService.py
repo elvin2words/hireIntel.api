@@ -82,6 +82,8 @@ class TextExtractionDataService:
                     'address': resume.address,
                     'linkedin_url': resume.linkedin_url,
                     'github_url': resume.github_url,
+                    'github_handle': resume.github_handle,
+                    'linkedin_handle': resume.linkedin_handle,
                     'portfolio_url': resume.portfolio_url
                 },
                 'education': [
@@ -155,6 +157,8 @@ class TextExtractionDataService:
                 address=personal_info.get('address'),
                 linkedin_url=personal_info.get('linkedinUrl'),
                 github_url=personal_info.get('githubUrl'),
+                linkedin_handle=personal_info.get('linkedinHandle'),
+                github_handle=personal_info.get('githubHandle'),
                 portfolio_url=personal_info.get('portfolioUrl')
             )
 

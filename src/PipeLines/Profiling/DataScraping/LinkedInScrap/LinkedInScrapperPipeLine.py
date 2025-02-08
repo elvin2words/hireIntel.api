@@ -15,11 +15,9 @@ class LinkedInScrapingConfig(PipelineConfig):
                  name: str = "linkedin_scraping",
                  batch_size: int = 10,
                  process_interval: int = 300,
-                 linkedin_email: str = "",
-                 linkedin_password: str = ""):
+                 rapid_api_key: str = ""):
         super().__init__(name, batch_size, process_interval=process_interval)
-        self.linkedin_email = linkedin_email
-        self.linkedin_password = linkedin_password
+        self.rapid_api_key = rapid_api_key
 
 
 class LinkedInScrapingPipeline(BasePipeline):
@@ -29,7 +27,7 @@ class LinkedInScrapingPipeline(BasePipeline):
         self.__candidateService = CandidateService()
         self.__googleScrapDataService = GoogleScrapDataService()
         self.__linkedInScrapDataService = LinkedInScrapDataService()
-        self.__rapidLinkedInScraper = RapidLinkedInAPIClient()
+        self.__rapidLinkedInScraper = RapidLinkedInAPIClient(config.rapid_api_key)
 
     def get_input_data(self) -> List[Candidate]:
         return (Candidate.query
@@ -45,6 +43,10 @@ class LinkedInScrapingPipeline(BasePipeline):
             raise CustomError(f"No LinkedIn URL found for candidate {candidate.id}", 400)
 
         profile_data = self.__rapidLinkedInScraper.get_profile(username)
+
+        if profile_data is None:
+            raise CustomError(f"Failed to get LinkedIn profile ", 400)
+
         return {'candidate_id': candidate.id, 'profile_data': profile_data}
 
     def update_output(self, results: List[Dict]) -> None:
@@ -60,4 +62,10 @@ class LinkedInScrapingPipeline(BasePipeline):
 
     def handle_item_failure(self, candidate: Candidate, error: Exception) -> None:
         self.logger.error(f"LinkedIn scraping failed for candidate {candidate.id}: {str(error)}")
-        self.__candidateService.set_pipeline_status_to_linkedin_scrape_failed(candidate.id)
+        """
+            If it fails to retrieve it should continue 
+            Considering most people wont have linkedin or they delete them 
+            We will use the resume and other data we have to create a profile
+        """
+        self.__candidateService.set_pipeline_status_to_github_scrape(candidate.id)
+        # self.__candidateService.set_pipeline_status_to_linkedin_scrape_failed(candidate.id)

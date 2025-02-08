@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Optional
 
 from src.Helpers.LLMService import LLMService
@@ -19,20 +20,23 @@ class ProfileCreationService:
         # Fetch data
         job_data = self.__job_service.fetch_by_id(job_id)
         resume_data = self.__resume_service.get_resume_by_candidate_id(candidate_id)
-        # linkedin_data = self.__linkedin_service.get_profile_by_candidate_id(candidate_id)
+        linkedin_data = self.__linkedin_service.get_profile_by_candidate_id(candidate_id)
         github_data = self.__github_service.get_profile_by_candidate_id(candidate_id)
-        print(f"github_data: {github_data}")
-        linkedin_data ={}
+
+        # print(f"LinkedIn unclean: {json.dumps(linkedin_data, indent=2)}")
+
         # Clean data
         cleaned_data = self.__prepare_data_for_comparison(
             job_data, resume_data, linkedin_data, github_data
         )
 
+        # print(f"cleaned_data: {json.dumps(cleaned_data['linkedin'], indent=2)}")
+
         # Generate prompt and get profile analysis
         prompt = self.__generate_llm_prompt(cleaned_data)
         try:
             profile_analysis = self.__llm_service.create_profile(prompt)
-            print("Candidate profile created", profile_analysis)
+            print("Candidate profile created", json.dumps(profile_analysis, indent=2))
             return profile_analysis
         except Exception as e:
             raise Exception(f"Failed to create profile: {str(e)}")
@@ -63,7 +67,7 @@ class ProfileCreationService:
                 {
                     "institution": edu.get("institution"),
                     "degree": edu.get("degree"),
-                    "field": edu.get("field_of_study")
+                    "field": edu.get("fieldOfStudy")
                 }
                 for edu in resume_data.get("education", [])
             ],
@@ -71,20 +75,21 @@ class ProfileCreationService:
                 {
                     "company": exp.get("company"),
                     "position": exp.get("position"),
-                    "duration": exp.get("duration"),
+                    "start_date": exp.get("startDate"),
+                    "end_date": exp.get("endDate"),
                     "description": exp.get("description")
                 }
-                for exp in resume_data.get("work_experience", [])
+                for exp in resume_data.get("workExperience", [])
             ],
             "technical_skills": [
                 {
-                    "name": skill.get("skill_name"),
-                    "proficiency": skill.get("proficiency_level"),
-                    "years": skill.get("years_experience")
+                    "name": skill.get("skillName"),
+                    "proficiency": skill.get("proficiencyLevel"),
+                    "years": skill.get("yearsExperience")
                 }
-                for skill in resume_data.get("technical_skills", [])
+                for skill in resume_data.get("technicalSkills", [])
             ],
-            "soft_skills": [skill.get("skill_name") for skill in resume_data.get("soft_skills", [])]
+            "soft_skills": [skill.get("skillName") for skill in resume_data.get("softSkills", [])]
         }
 
     def __clean_linkedin_data(self, linkedin_data: Dict) -> Dict:
@@ -105,9 +110,9 @@ class ProfileCreationService:
 
     def __clean_github_data(self, github_data: Dict) -> Dict:
         return {
-            "contributions": github_data.get("contributions_last_year"),
-            "total_stars": github_data.get("total_stars_earned"),
-            "public_repos": github_data.get("public_repos"),
+            "contributions": github_data.get("contributionsLastYear"),
+            "total_stars": github_data.get("totalStarsEarned"),
+            "public_repos": github_data.get("publicRepos"),
             "top_languages": self.__extract_top_languages(github_data.get("repositories", [])),
             "significant_projects": [
                 {
@@ -195,6 +200,8 @@ class ProfileCreationService:
                 5. Factor in project complexity and impact
                 6. Consider both quantity and quality of contributions
                 7. Evaluate breadth and depth of technical expertise
+                8. Consolidate identical or overlapping work experiences from resume, LinkedIn, and GitHub into single entries
+                9. Merge matching education records from different sources rather than counting them multiple times
                 
                 Provide the analysis as a JSON object only, with no additional text.
                 """

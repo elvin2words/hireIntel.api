@@ -7,6 +7,7 @@ from flask import Flask
 from src.Modules.Candidate.CandidateService import CandidateService
 from src.Modules.Candidate.Documents.DocumentService import DocumentService
 from src.Modules.Candidate.Documents.DocumentModels import CandidateDocument
+from src.Modules.Notification.NotificationService import NotificationService, NotificationType
 from src.PipeLines.Integration.EmailWatcher.EmailProccessor import XMLProcessor
 from src.PipeLines.PipeLineManagement.PipeLineBase import PipelineConfig, BasePipeline
 from src.PipeLines.PipeLineManagement.PipeLineMonitor import PipelineMonitor
@@ -37,6 +38,7 @@ class FileWatcherPipeline(BasePipeline):
         self.processor = XMLProcessor()
         self.candidate_service = CandidateService()
         self.document_service = DocumentService(config.resume_path)
+        self.__notificationService = NotificationService()
 
     def get_input_data(self) -> List[Dict[str, str]]:
         """Find XML files in watch folder"""
@@ -117,6 +119,11 @@ class FileWatcherPipeline(BasePipeline):
                         document_type=doc.document_type
                     )
 
+            self.__notificationService.sendJobApplicationNotificationFeedback(
+                data="",
+                recipient_email=created_candidate["email"],
+                notification_type=NotificationType.APPLICATION_RECEIVED
+            )
             return True
 
         except Exception as e:

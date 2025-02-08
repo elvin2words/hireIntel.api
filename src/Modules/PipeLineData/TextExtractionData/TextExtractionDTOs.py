@@ -8,6 +8,8 @@ class PersonalInformationDTO(CamelCaseSchema):
     address = fields.Str(allow_none=True)
     linkedin_url = fields.Str(allow_none=True)
     github_url = fields.Str(allow_none=True)
+    linkedin_handle = fields.Str(allow_none=True)
+    github_handle = fields.Str(allow_none=True)
     portfolio_url = fields.Str(allow_none=True)
 
 class EducationDTO(CamelCaseSchema):

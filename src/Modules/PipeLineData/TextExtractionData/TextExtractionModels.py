@@ -26,6 +26,8 @@ class Resume(db.Model):
     address = db.Column(db.String(500), nullable=True)
     linkedin_url = db.Column(db.String(255), nullable=True)
     github_url = db.Column(db.String(255), nullable=True)
+    linkedin_handle = db.Column(db.String(255), nullable=True)
+    github_handle = db.Column(db.String(255), nullable=True)
     portfolio_url = db.Column(db.String(255), nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -33,7 +33,8 @@ assets: {
 
 profiler: {
   "github_token": "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",
-  "google_api_key": "AIzaSyC3mzbjTwWyLKqgdpS-Z1iY5vcNhWl7mEc",
+  "google_api_key": "4b2bd8d449f606e0f71f57875c46bbe14fd93def",
+  "rapid_api_key": "8db03861bbmsh22f75dbc69e476dp12c8f1jsn7aff481e6529",
   "google_search_url": "",
   "batch_size": 5,
   "intervals": {
@@ -50,11 +51,12 @@ profiler: {
       "github": 0.25
     },
     "min_passing_score": 70.0
-  },
-  "linkedin_credentials": {
-    "email": "info.garret.events@gmail.com",
-    "password": "@Slumptools1"
   }
+}
+
+llm: {
+   "genai_token" : "AIzaSyDHrYRfS6X6e1Ia1OwmMoRw48JD94tp28o",
+   "poppler_path" : "C:\\Program Files\\poppler-24.08.0\\Library\\bin" # make sure its in backslash
 }
 
 watcher: {

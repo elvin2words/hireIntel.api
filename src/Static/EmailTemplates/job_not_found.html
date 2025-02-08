@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Base styles */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background-color: #f7fafc;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container */
+        .email-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* Header section */
+        .header {
+            background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Main content */
+        .content {
+            padding: 2.5rem;
+            background-color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .main-message {
+            margin-bottom: 2rem;
+        }
+
+        .main-message .content-paragraph {
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            color: #2d3748;
+        }
+
+        /* Error message section */
+        .error-message {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 1.8rem;
+            margin: 1.8rem 0;
+            border-left: 4px solid #f56565;
+        }
+
+        .error-message h2 {
+            color: #c53030;
+            font-size: 1.4rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .error-message p {
+            color: #4a5568;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        /* Signature section */
+        .signature {
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            color: #4a5568;
+            line-height: 1.8;
+        }
+
+        .signature p {
+            margin-bottom: 0.5rem;
+        }
+
+        .company-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        /* Responsive design */
+        @media (max-width: 850px) {
+            .email-container {
+                margin: 0;
+                border-radius: 0;
+                width: 100%;
+            }
+
+            .content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Application Update</h1>
+            <p>Job Reference Issue</p>
+        </div>
+
+        <div class="content">
+            <div class="main-message">
+                <p class="content-paragraph">
+                    Thank you for your job application. However, we've encountered an issue with the job reference provided.
+                </p>
+            </div>
+
+            <div class="error-message">
+                <h2>Job Reference Issue</h2>
+                <p>{{error_message}}</p>
+            </div>
+
+            <p class="content-paragraph">
+                Please verify the job ID and submit your application again with a valid job reference. You can find the correct job ID on our careers page or in the original job posting.
+            </p>
+
+            <div class="signature">
+                <p>Best regards,</p>
+                <p class="company-name">HR TEAM</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

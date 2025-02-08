@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 
 from src.Helpers.ErrorHandling import CustomError
 from src.Modules.Jobs.JobDTOs import (
@@ -69,6 +69,29 @@ class JobService:
             return self.__job_dto.dump(job)
         except Exception as e:
             raise CustomError(str(e), getattr(e, 'code', 400))
+
+    def fetch_by_id_for_xml(self, job_id: str) -> Union[Dict, None]:
+            """
+            Fetch a job by ID with all related data
+            """
+            try:
+                job = self.__job_repository.get_job_by_id(job_id)
+                if not job:
+                    return None
+
+                # Get related data
+                technical_skills = self.__technical_skill_repository.get_by_job_id(job_id)
+                soft_skills = self.__soft_skill_repository.get_by_job_id(job_id)
+                education_requirements = self.__education_repository.get_by_job_id(job_id)
+
+                # Combine all data into job object before serialization
+                setattr(job, 'technical_skills', technical_skills)
+                setattr(job, 'soft_skills', soft_skills)
+                setattr(job, 'education_requirements', education_requirements)
+
+                return self.__job_dto.dump(job)
+            except Exception as e:
+                raise CustomError(str(e), getattr(e, 'code', 400))
 
     def create_job(self, job_data: Dict[str, Any]) -> Dict:
         """

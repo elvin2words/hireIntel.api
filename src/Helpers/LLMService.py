@@ -12,21 +12,18 @@ import base64
 import io
 import google.generativeai as genai
 
-# @dataclass
-# class ProfileData:
-#     full_name: str
-#     location: Optional[str] = None
-#     bio: Optional[str] = None
-#     company: Optional[str] = None
-#     email: Optional[str] = None
+from src.config.ConfigBase import Config
+
 
 class LLMService:
     def __init__(self):
-        self.api_key = "AIzaSyDHrYRfS6X6e1Ia1OwmMoRw48JD94tp28o"
-        self.__POPPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
+        self.config = Config()
+        self.api_key = self.config.getConfig()["llm"]["genai_token"] #
+        self.__POPPLER_PATH = self.config.getConfig()["llm"]["poppler_path"] #
         self._model = None
         self._max_retries = 3
         self._retry_delay = 2  # seconds
+
 
     def _ensure_model_initialized(self) -> None:
         """Ensures model is initialized before use"""
@@ -88,6 +85,8 @@ class LLMService:
                 "address": "",
                 "linkedinUrl": "",
                 "githubUrl": "",
+                "githubHandle" : "", // extracted from github url
+                "linkedinHandle": "", // extracted from linkedin Url
                 "portfolioUrl": ""
             },
             "education": [
@@ -144,6 +143,19 @@ class LLMService:
         6. If an attribute is not found, return it as null (for numbers) or an empty string/array as appropriate.
         7. Do not include extra fields or descriptions outside the defined structure.
         
+        URL and Handle Extraction Rules:
+           LinkedIn Username Extraction:
+           - From URL format: https://www.linkedin.com/in/username/ or linkedin.com/in/username etc
+           - Extract username portion after "in/" and before next "/" or end of URL
+           - Example: https://www.linkedin.com/in/johndoe/ or linkedin.com/in/johndoe → username: johndoe etc
+           - Store full URL in linkedinUrl and extracted username in linkedinHandle
+           
+           GitHub Username Extraction:
+           - From URL format: https://github.com/username or github.com/username etc
+           - Extract username portion after "github.com/" and before next "/" or end of URL
+           - Example: https://github.com/johndoe or github.com/johndoe → username: johndoe etc
+           - Store full URL in githubUrl and extracted username in githubHandle
+       
         Strict Rules when extracting
         1. Technical Skills Extraction with Proficiency Level:
         - Extract relevant technical skills from the resume, including programming languages, tools, certifications,
@@ -184,59 +196,63 @@ class LLMService:
         if missing_personal_fields:
             raise ValueError(f"Missing required personal information fields: {missing_personal_fields}")
 
+
     def parse_resume_with_vision(self, resume_path: str) -> Dict[str, Any]:
         """
         Parse resume using Gemini Vision capabilities
         Returns structured data from the resume
         """
         try:
-            _resume_path = Path(resume_path)
-            # Convert document to images
-            print("Converting document to images...")
-            document_images = self.__convert_document_to_images(_resume_path)
+            file_extension = Path(resume_path).suffix.lower()
+            if file_extension in ['.pdf', '.docx']:
+                return self.parse_resume_document(resume_path)
+            else:
+                _resume_path = Path(resume_path)
+                # Convert document to images
+                print("Converting document to images...")
+                document_images = self.__convert_document_to_images(_resume_path)
 
-            if not document_images:
-                raise ValueError("No images could be extracted from the document")
+                if not document_images:
+                    raise ValueError("No images could be extracted from the document")
 
-            print(f"Successfully converted document to {len(document_images)} images")
+                print(f"Successfully converted document to {len(document_images)} images")
 
-            # Initialize model
-            print("Initializing Gemini model...")
-            model = self.__init_gemini()
-            prompt = self.__genPromptToExtractDataFromResume()
+                # Initialize model
+                print("Initializing Gemini model...")
+                model = self.__init_gemini()
+                prompt = self.__genPromptToExtractDataFromResume()
 
-            # Process each image with the model
-            all_responses = []
-            for img_data in document_images:
-                # Extract base64 data from the data URL
-                base64_data = img_data.split('base64,')[1]
+                # Process each image with the model
+                all_responses = []
+                for img_data in document_images:
+                    # Extract base64 data from the data URL
+                    base64_data = img_data.split('base64,')[1]
 
-                # Create the image part in the correct format for Gemini
-                image_part = {
-                    "mime_type": "image/png",
-                    "data": base64_data
-                }
+                    # Create the image part in the correct format for Gemini
+                    image_part = {
+                        "mime_type": "image/png",
+                        "data": base64_data
+                    }
 
-                # Generate content with both prompt and image
-                response = model.generate_content([
-                    prompt,
-                    image_part
-                ])
-                all_responses.append(response.text)
+                    # Generate content with both prompt and image
+                    response = model.generate_content([
+                        prompt,
+                        image_part
+                    ])
+                    all_responses.append(response.text)
 
-            # Combine and parse responses
-            combined_response = "\n".join(all_responses)
-            parsed_data = self.__extract_json_from_response(combined_response)
-            print("Successfully extracted JSON data from response")
+                # Combine and parse responses
+                combined_response = "\n".join(all_responses)
+                parsed_data = self.__extract_json_from_response(combined_response)
+                print("Successfully extracted JSON data from response")
+                print(json.dumps(parsed_data, indent=4))
+                self.__validate_resume_data(parsed_data)
+                print("Data validation successful")
 
-            self.__validate_resume_data(parsed_data)
-            print("Data validation successful")
-
-            return parsed_data
+                return parsed_data
 
         except Exception as e:
             raise Exception(f"Error parsing resume with vision: {str(e)}")
-
 
     """
     *******************************************************************************************************
@@ -389,37 +405,6 @@ class LLMService:
         except Exception as e:
             raise Exception(f"Profile verification failed: {str(e)}")
 
-    # def complete_prompt(self, prompt: str) -> str:
-    #     try:
-    #         print("sending prompt.....")
-    #         model = self.__init_gemini()
-    #         response = model.generate_content(prompt)
-    #         if response: print("prompt sent successfully")
-    #         return response.text.strip()
-    #     except Exception as e:
-    #         raise Exception(f"Error completing prompt: {str(e)}")
-
-    # def verify_profile(self, prompt: str) -> Dict[str, Any]:
-    #     try:
-    #         print("Inside LLM Service...")
-    #         response_text = self.complete_prompt(prompt)
-    #         parsed_data = self.__extract_json_from_response(response_text)
-    #
-    #         required_fields = ['is_match', 'confidence_score', 'reasoning']
-    #         if not all(field in parsed_data for field in required_fields):
-    #             raise ValueError("Missing required fields in LLM response")
-    #
-    #         if not isinstance(parsed_data['confidence_score'], (int, float)) or \
-    #                 not 0 <= parsed_data['confidence_score'] <= 100:
-    #             raise ValueError("Invalid confidence score")
-    #
-    #         return parsed_data
-    #
-    #     except Exception as e:
-    #         raise Exception(f"Profile verification failed: {str(e)}")
-
-
-
     """
     1. To verify if the github and linkedIn profiles 
     belong to the correct person
@@ -464,65 +449,6 @@ class LLMService:
         prompt = ""
         return prompt
 
-    # def create_notification(self, prompt: str) -> Dict[str, Any]:
-    #     """
-    #     Creates and validates an email notification response from the LLM
-    #
-    #     Expected JSON format:
-    #     {
-    #         "subject": str,
-    #         "content": str,
-    #         "notification_type": str,  # "acceptance" or "rejection"
-    #         "personalization": {
-    #             "candidate_name": str,
-    #             "custom_fields": Dict[str, str]  # Additional personalization fields
-    #         },
-    #         "metadata": {
-    #             "priority": str,  # "high", "medium", "low"
-    #             "send_time": str  # ISO format datetime
-    #         }
-    #     }
-    #     """
-    #     try:
-    #         print("Starting notification creation...")
-    #         response_text = self.complete_prompt(prompt)
-    #
-    #         if not response_text:
-    #             raise ValueError("Empty response from LLM")
-    #
-    #         parsed_data = self.__extract_json_from_response(response_text)
-    #
-    #         # Validate required fields
-    #         required_fields = ['subject', 'content', 'notification_type', 'personalization', 'metadata']
-    #         missing_fields = [f for f in required_fields if f not in parsed_data]
-    #         if missing_fields:
-    #             raise ValueError(f"Missing required fields: {missing_fields}")
-    #
-    #         # Validate personalization fields
-    #         if not isinstance(parsed_data['personalization'], dict) or \
-    #                 'candidate_name' not in parsed_data['personalization']:
-    #             raise ValueError("Invalid personalization data")
-    #
-    #         # Validate notification type
-    #         valid_types = ['acceptance', 'rejection']
-    #         if parsed_data['notification_type'] not in valid_types:
-    #             raise ValueError(f"Invalid notification type. Must be one of: {valid_types}")
-    #
-    #         # Validate metadata
-    #         valid_priorities = ['high', 'medium', 'low']
-    #         if parsed_data['metadata']['priority'] not in valid_priorities:
-    #             raise ValueError(f"Invalid priority. Must be one of: {valid_priorities}")
-    #
-    #         try:
-    #             # Validate datetime format
-    #             datetime.fromisoformat(parsed_data['metadata']['send_time'])
-    #         except ValueError:
-    #             raise ValueError("Invalid datetime format in send_time")
-    #
-    #         return parsed_data
-    #
-    #     except Exception as e:
-    #         raise Exception(f"Notification creation failed: {str(e)}")
 
     def create_interview_schedule(self, prompt: str) -> Dict[str, Any]:
         """
@@ -636,3 +562,52 @@ class LLMService:
         except Exception as e:
             raise Exception(f"Failed to generate notification email: {str(e)}")
 
+    def parse_resume_document(self, resume_path: str) -> Dict[str, Any]:
+        """
+        Parse resume document (PDF or DOCX) using Gemini Vision capabilities
+        Returns structured data from the resume
+        """
+        try:
+            print("Initializing Gemini model...")
+            model = self.__init_gemini()
+            prompt = self.__genPromptToExtractDataFromResume()
+
+            print("Uploading resume document...")
+            uploaded_file = genai.upload_file(path=resume_path)
+            print(f"Uploaded file '{uploaded_file.display_name}' as: {uploaded_file.uri}")
+
+            print("Sending document to Gemini Vision API...")
+            response = model.generate_content(
+                [uploaded_file, prompt]
+            )
+
+            print("Extracting JSON data from response...")
+            parsed_data = self.__extract_json_from_response(response.text)
+
+            self.__validate_resume_data(parsed_data)
+            print("Data validation successful")
+
+            print("data; ", json.dumps(parsed_data, indent=2))
+
+            # Verify the uploaded file
+            file = genai.get_file(name=uploaded_file.name)
+            print(f"Retrieved file '{file.display_name}' as: {uploaded_file.uri}")
+
+            return parsed_data
+
+        except Exception as e:
+            raise Exception(f"Error parsing resume document: {str(e)}")
+
+    def extract_info_from_email(self, prompt: str) -> Dict[str, Any]:
+        try:
+            print("Starting email data extraction extraction...")
+            response_text = self.complete_prompt(prompt)
+
+            if not response_text:
+                raise ValueError("Empty response from LLM")
+
+            parsed_data = self.__extract_json_from_response(response_text)
+            return parsed_data
+
+        except Exception as e:
+            raise Exception(f"Email infor extraction failed: {str(e)}")

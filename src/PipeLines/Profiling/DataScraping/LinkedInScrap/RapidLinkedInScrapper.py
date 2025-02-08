@@ -1,6 +1,6 @@
 import requests
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 from http import HTTPStatus
 
 
@@ -9,14 +9,14 @@ class RapidLinkedInAPIClient:
 
     BASE_URL = "https://linkedin-data-api.p.rapidapi.com/"
 
-    def __init__(self):
+    def __init__(self, rapid_api_key: str) -> None:
 
         self.headers = {
-            "x-rapidapi-key": "8db03861bbmsh22f75dbc69e476dp12c8f1jsn7aff481e6529",
+            "x-rapidapi-key": rapid_api_key,
             "x-rapidapi-host": "linkedin-data-api.p.rapidapi.com"
         }
 
-    def get_profile(self, username: str) -> Dict:
+    def get_profile(self, username: str) -> Union[Dict, None]:
         """
         Fetch LinkedIn profile data for a given username.
 
@@ -44,7 +44,12 @@ class RapidLinkedInAPIClient:
             # Parse and format the response data
             data = response.json()
             print("Fetched LinkedIn profile data for {}".format(username))
-            return self._format_profile_data(data)
+            parsed_data = self._format_profile_data(data)
+
+            if parsed_data["basic_info"]["username"] is not None:
+                return parsed_data
+
+            return None
 
         except requests.exceptions.RequestException as e:
             raise Exception(f"API request failed: {str(e)}")

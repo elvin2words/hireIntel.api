@@ -68,17 +68,7 @@ class EmailMonitorPipeline(BasePipeline):
         if not self._is_email_in_date_range(_email['date']):
             return None
 
-        valid_attachments = [
-            attachment for attachment in _email['attachments']
-            if os.path.splitext(attachment['original_filename'])[1].lower()
-               in self.config.attachment_types
-        ]
-
-        if not valid_attachments:
-            return None
-
-        _email['valid_attachments'] = valid_attachments
-        success, message = self.__email_processor.process_email(_email)
+        success, message = self.__email_processor.process_email(_email, self.config.attachment_types)
 
         if not success:
             raise CustomError(f"Failed to process email: {message}", 400)

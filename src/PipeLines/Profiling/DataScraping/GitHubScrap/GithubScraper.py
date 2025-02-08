@@ -1,4 +1,5 @@
 import re
+from typing import Union
 
 import requests
 import json
@@ -6,7 +7,7 @@ from datetime import datetime, timedelta
 
 
 class GitHubScraper:
-    def __init__(self, token = "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"):
+    def __init__(self, token):
         self.headers = {
             'Authorization': f'token {token}',
             'Accept': 'application/vnd.github.v3+json'
@@ -14,15 +15,24 @@ class GitHubScraper:
         self.base_url = 'https://api.github.com'
 
 
-    def get_user_stats(self, identifier):
+    def get_user_stats(self, identifier) -> Union[dict, None]:
         """Fetch comprehensive user statistics by username"""
         print("fetching user info for by username:  '{}'".format(identifier))
         user_info = self._get_user_info(identifier)
-        username = user_info['login']
-        user_repos = self._get_user_repos(username)
-        contributions = self._get_yearly_contributions(username)
-        total_stars = sum(repo['stargazers_count'] for repo in user_repos)
-        rating = self._calculate_user_rating(user_info, total_stars, contributions)
+        if not user_info:
+            print(f"Could not fetch user info for {identifier}")
+            return None
+
+        try:
+            username = user_info['login']
+            user_repos = self._get_user_repos(username)
+            contributions = self._get_yearly_contributions(username)
+            total_stars = sum(repo['stargazers_count'] for repo in user_repos)
+            rating = self._calculate_user_rating(user_info, total_stars, contributions)
+        except Exception as e:
+            print(f"Error fetching user statistics: {str(e)}")
+            return None
+
         print("User info fetched successfully. Processing user github stats:")
         # Comprehensive user profile and stats
         profile_data = {

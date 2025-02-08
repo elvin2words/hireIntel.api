@@ -11,10 +11,11 @@ from src.Modules.PipeLineData.TextExtractionData.TextExtractionService import Te
 from src.PipeLines.Profiling.DataScraping.GitHubScrap.GithubScraper import GitHubScraper
 from src.PipeLines.Profiling.DataScraping.LinkedInScrap.RapidLinkedInScrapper import RapidLinkedInAPIClient
 
+# Todo : make sure the verification is working properly
 class HandleProfileVerification:
-    def __init__(self):
-        self.github_scraper = GitHubScraper()
-        self.linkedin_scraper = RapidLinkedInAPIClient()
+    def __init__(self, gitHubToken , rapidApiKey):
+        self.github_scraper = GitHubScraper(gitHubToken)
+        self.linkedin_scraper = RapidLinkedInAPIClient(rapidApiKey)
         self.candidate_service = CandidateService()
         self.llm_service = LLMService()
         self.textExtractionDataService = TextExtractionDataService()
@@ -66,7 +67,8 @@ class HandleProfileVerification:
 
         Resume Data:  
         - Name: {candidate_data['firstName']} {candidate_data['lastName']}
-        - Location: {candidate_data.get('location', 'N/A')}
+        - Location: {resume_data.get('location', 'N/A')}
+        - Second Location: {candidate_data.get('location', 'N/A')}
         - Education: {resume_data.get('education', 'N/A')}
         - Work Experience: {resume_data.get('workExperience', 'N/A')}
 
@@ -80,7 +82,8 @@ class HandleProfileVerification:
         }}
         """
 
-    def __create_github_verification_prompt(self, scraped_data: dict, candidate_data: dict) -> str:
+    def __create_github_verification_prompt(self, scraped_data: dict, candidate_data: dict,
+                                            resume_data: dict) -> str:
         return f"""Analyze the GitHub profile and candidate data to determine if they represent the same person.  
         GitHub Profile:
         - Name: {scraped_data["basic_info"]["name"]}
@@ -91,8 +94,9 @@ class HandleProfileVerification:
         Candidate Data:
         - Name: {candidate_data['firstName']} {candidate_data['lastName']}  
         - Email: {candidate_data['email']}
-        - Location: {candidate_data.get('location', 'N/A')}
-        - Current/Last Company: {candidate_data.get('current_company', 'N/A')}
+        - Location: {resume_data.get('location', 'N/A')}
+        - Second Location: {candidate_data.get('location', 'N/A')}
+        - Work Experience: {resume_data.get('workExperience', 'N/A')}
 
         Respond in JSON format with:
         {{
@@ -112,7 +116,7 @@ class HandleProfileVerification:
             if profile_type.lower() == "linkedin":
                 context = self.__create_linkedin_verification_prompt(scraped_data, candidate_data, resume_data)
             elif profile_type.lower() == "github":
-                context = self.__create_github_verification_prompt(scraped_data, candidate_data)
+                context = self.__create_github_verification_prompt(scraped_data, candidate_data, resume_data)
             else:
                 raise ValueError(f"Invalid profile type: {profile_type}")
 

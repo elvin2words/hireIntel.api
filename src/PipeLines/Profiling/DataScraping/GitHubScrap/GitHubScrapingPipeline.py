@@ -46,6 +46,9 @@ class GitHubScrapingPipeline(BasePipeline):
         username = candidateGithubHandle["handle"]
         github_info = self.__githubScrapper.get_user_stats(username)
 
+        if github_info is None:
+            raise CustomError(f"Failed to fetch Github profile for :  {candidate.email}", 400)
+
         return {
             'candidate_id': candidate.id,
             'github_info': github_info
@@ -66,5 +69,11 @@ class GitHubScrapingPipeline(BasePipeline):
     def handle_item_failure(self, candidate: Candidate, error: Exception) -> None:
         """Handle failures in GitHub data processing"""
         self.logger.error(f"GitHub scraping failed for candidate {candidate.id}: {str(error)}")
-        self.__candidateService.set_pipeline_status_to_github_scrape_failed(candidate.id)
+        """
+            If it fails to retrieve it should continue 
+            Considering most people wont have Github or they delete them 
+            We will use the resume and other data we have to create a profile
+        """
+        self.__candidateService.set_pipeline_status_to_profile_creation(candidate.id)
+        # self.__candidateService.set_pipeline_status_to_github_scrape_failed(candidate.id)
         db.session.rollback()

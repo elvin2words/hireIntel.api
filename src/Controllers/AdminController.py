@@ -37,7 +37,7 @@ def get_job_by_id(job_id: str):
 
 
 @ADMIN_CONTROLLER.route('/jobs', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def create_job():
     data = request.get_json()
     job = jobService.create_job(data)

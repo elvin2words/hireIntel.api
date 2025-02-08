@@ -7,8 +7,8 @@ from src.Helpers.ErrorHandling import CustomError
 from src.Helpers.LLMService import LLMService
 from src.Modules.Interviews.InterviewDTOs import InterviewScheduleDTO
 from src.Modules.Interviews.InterviewModels import InterviewSchedule, InterviewStatus
-from src.Modules.Interviews.InterviewNotificationService import InterviewNotificationService, NotificationType
-from src.Modules.Interviews.InterviewRepository import InterviewScheduleRepository, EmailNotificationRepository
+from src.Modules.Notification.NotificationService import NotificationService, NotificationType
+from src.Modules.Interviews.InterviewRepository import InterviewScheduleRepository
 from src.Modules.Candidate.CandidateService import CandidateService
 from src.Modules.PipeLineData.ProfileCreationData.ProfileCreationService import CandidateProfileDataService
 
@@ -38,12 +38,12 @@ class ProcessCandidatesResponse(TypedDict):
 class InterviewSchedulerService:
     def __init__(self):
         self.__interview_repo = InterviewScheduleRepository()
-        self.__email_repo = EmailNotificationRepository()
+        # self.__email_repo = EmailNotificationRepository()
         self.__candidate_service = CandidateService()
         self.__llm_service = LLMService()
         self.__request_schema = InterviewScheduleRequestSchema()
         self.__candidate_profile = CandidateProfileDataService()
-        self.__notificationService = InterviewNotificationService()
+        self.__notificationService = NotificationService()
 
 
     #Todo: make it so that the meeting link is configured on the database front end
@@ -240,15 +240,16 @@ class InterviewSchedulerService:
                 InterviewStatus.CANCELLED
             )
 
-            # Create cancellation notification
-            notification_data = {
-                'candidate_id': schedule.candidate_id,
-                'subject': 'Interview Cancelled',
-                'email_type': 'cancelled',
-                'content': f'Your interview scheduled for {schedule.start_datetime.strftime("%B %d, %Y at %I:%M %p")} has been cancelled.'
-            }
-            self.__email_repo.create_notification(notification_data)
+            # Todo : Can add a interview cancelled email in the future
 
+            # Create cancellation notification
+            # notification_data = {
+            #     'candidate_id': schedule.candidate_id,
+            #     'subject': 'Interview Cancelled',
+            #     'email_type': 'cancelled',
+            #     'content': f'Your interview scheduled for {schedule.start_datetime.strftime("%B %d, %Y at %I:%M %p")} has been cancelled.'
+            # }
+            # self.__email_repo.create_notification(notification_data)
             # Return DTO
             schedule_schema = InterviewScheduleDTO()
             return schedule_schema.dump(cancelled_schedule)

@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 from src.Helpers.HandleProfileVerification import HandleProfileVerification
 from src.Modules.Candidate.CandidateModels import Candidate
+from src.Modules.PipeLineData.TextExtractionData.TextExtractionService import TextExtractionDataService
 from src.PipeLines.Profiling.DataScraping.GitHubScrap.GithubScraper import GitHubScraper
 from src.PipeLines.Profiling.DataScraping.LinkedInScrap.RapidLinkedInScrapper import RapidLinkedInAPIClient
 
@@ -48,11 +49,13 @@ GitHub: {self.githubHandle}
 class ProfileScraper:
     """Scraper class specifically optimized for finding GitHub and LinkedIn profiles"""
 
-    def __init__(self):
-        self.api_key = "4b2bd8d449f606e0f71f57875c46bbe14fd93def"
-        self.verifier = HandleProfileVerification()
-        self.githubScraper = GitHubScraper()
-        self.linkedInScraper = RapidLinkedInAPIClient()
+    def __init__(self, githubToken, serperToken, serperBaseUrl, rapid_api_key):
+        self.api_key = serperToken
+        self.serperBaseUrl = serperBaseUrl
+        self.verifier = HandleProfileVerification(gitHubToken=githubToken,rapidApiKey=rapid_api_key)
+        self.githubScraper = GitHubScraper(githubToken)
+        self.linkedInScraper = RapidLinkedInAPIClient(rapid_api_key)
+        self.textExtractionDataService = TextExtractionDataService()
         self.search_delay = 1
         self.max_results = 10
 
@@ -74,7 +77,7 @@ class ProfileScraper:
 
     def _make_search_request(self, query: str, site: str) -> List[str]:
         """Make a search request using Serper API with profile-specific queries"""
-        base_url = "https://google.serper.dev/search"
+        base_url = self.serperBaseUrl
 
         # Define profile-specific search patterns
         profile_patterns = {
@@ -134,6 +137,19 @@ class ProfileScraper:
     def _find_linkedin_profile(self, candidate: Candidate) -> LinkedInHandle:
         """Find LinkedIn profile for a given name"""
         full_name = candidate.first_name + " " + candidate.last_name
+        resume = self.textExtractionDataService.get_resume_by_candidate_id(candidate.id)
+
+        linkedInUrl = resume["personalInformation"]["linkedinUrl"]
+        linkedInHandle = resume["personalInformation"]["linkedinHandle"]
+
+        if linkedInUrl and linkedInHandle:
+            print("Found the linkedin url in the resume :", linkedInUrl)
+            print(f"{linkedInHandle} linkedin usernames found")
+            return LinkedInHandle(
+                verified=True,
+                linkedin_username=linkedInHandle,
+                linkedin_url=linkedInUrl
+            )
 
         # Get LinkedIn URLs
         linkedin_urls = self._make_search_request(full_name, "linkedin.com/in")
@@ -159,7 +175,7 @@ class ProfileScraper:
                 profile_type="LinkedIn"
             )
 
-            if not res or len(res) < 0: raise
+            if not res or len(res) < 0: return LinkedInHandle()
 
             if res["is_match"]:
                 matching_url = next((url for url in linkedin_urls if f'/in/{username}' in url.lower()), None)
@@ -175,6 +191,19 @@ class ProfileScraper:
     def _find_github_profile(self, candidate: Candidate) -> GithubHandle:
         """Find GitHub profile for a given name"""
         full_name = candidate.first_name + " " + candidate.last_name
+        resume = self.textExtractionDataService.get_resume_by_candidate_id(candidate.id)
+
+        githubUrl = resume["personalInformation"]["githubUrl"]
+        githubHandle = resume["personalInformation"]["githubHandle"]
+
+        if githubUrl and githubHandle:
+            print("Found the GitHub url in the resume:", githubUrl)
+            print(f"{githubHandle} GitHub usernames found")
+            return GithubHandle(
+                verified=True,
+                github_username=githubHandle,
+                github_url=githubUrl
+            )
 
         # Get GitHub URLs
         github_urls = self._make_search_request(full_name, "github.com")
@@ -202,7 +231,7 @@ class ProfileScraper:
                     candidate_id=candidate.id,
                     profile_type="github")
 
-                if not res or len(res) < 0: raise
+                if not res or len(res) < 0: return GithubHandle()
                 print(res["is_match"], type(res["is_match"]))
                 if bool(res["is_match"]):
                     matching_url = next((url for url in github_urls if f'/{username}' in url.lower()), None)
@@ -277,20 +306,3 @@ class ProfileScraper:
         print(f"inside profile is : {_profile}")
         return _profile
 
-#
-# # Example usage:
-# if __name__ == "__main__":
-#     try:
-#         # Initialize scraper
-#         scraper = ProfileScraper()
-#
-#         # Test with a name
-#         test_name = "Kudzai P Matizirofa"
-#         profile = scraper.find_profiles(test_name)
-#
-#         # Print results
-#         print("\nSearch Results:")
-#         print(profile)
-#
-#     except Exception as e:
-#         print(f"An error occurred: {e}")

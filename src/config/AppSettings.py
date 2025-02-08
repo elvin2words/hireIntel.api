@@ -35,8 +35,7 @@ def init_pipelines(app: Flask, config: dict):
         name="linkedin_scraping",
         batch_size=config["profiler"]["batch_size"],
         process_interval=config["profiler"]["intervals"]["linkedin_scraping"] * 60,  # Convert to seconds
-        linkedin_email=config["profiler"]["linkedin_credentials"]["email"],
-        linkedin_password=config["profiler"]["linkedin_credentials"]["password"],
+        rapid_api_key=config["profiler"]["rapid_api_key"],
     )
     linkedin_pipeline = LinkedInScrapingPipeline(app, linkedin_scraping_config, monitor)
     manager.register_pipeline(linkedin_pipeline)
@@ -82,8 +81,9 @@ def init_pipelines(app: Flask, config: dict):
         name="google_scraping",
         batch_size=config["profiler"]["batch_size"],
         process_interval=config["profiler"]["intervals"]["google_scraping"] * 60,
-        api_key=config["profiler"]["google_api_key"],
-        google_url=config["profiler"]["google_search_url"]
+        serperToken=config["profiler"]["google_api_key"],
+        githubToken=config["profiler"]["github_token"],
+        rapid_api_key=config["profiler"]["rapid_api_key"],
     )
     google_pipeline = GoogleScrapingPipeline(app, google_scraping_config, monitor)
     manager.register_pipeline(google_pipeline)
