@@ -1,16 +1,23 @@
 import os
 from datetime import datetime
 import uuid
+import logging
 from enum import Enum
 from typing import Dict, List, Union
 from src.Helpers.ErrorHandling import CustomError
 from src.Helpers.MailService import MailService
 
-
 from src.Modules.Notification.NotificationDTOs import EmailNotificationDTO
 from src.Modules.Notification.NotificationModels import EmailNotification
 from src.Modules.Notification.NotificationRepository import EmailNotificationRepository
 
+
+
+"""
+This NotificationService focuses on managing notifications, primarily by sending emails. 
+It loads email templates, processes them based on the type of notification, and uses a MailService to send the final email.
+
+"""
 
 class NotificationType(Enum):
     RESUME_NOT_FOUND = 'RESUME_NOT_FOUND'
@@ -19,9 +26,12 @@ class NotificationType(Enum):
     MISSING_FIELDS = 'MISSING_FIELDS'
     JOB_NOT_FOUND ='JOB_NOT_FOUND'
     APPLICATION_RECEIVED = 'APPLICATION_RECEIVED'
+    INTERVIEW_SCHEDULED = 'INTERVIEW_SCHEDULED'
 
 
 class NotificationService:
+    _template_cache = {}
+    
     def __init__(self):
         self.__email_repo = EmailNotificationRepository()
         self.__mail = MailService()

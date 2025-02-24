@@ -5,7 +5,7 @@ import email
 from email.mime.application import MIMEApplication
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.header import decode_header
+from email.header import decode_header 
 from datetime import datetime
 from typing import List, Dict, Optional, Union
 

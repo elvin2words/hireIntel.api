@@ -14,6 +14,14 @@ pip install -r requirements.txt
 pip install flask
 pip install django
 
+pip install --upgrade package_name # to update the packages you want to update
+
+pip list --outdated | awk 'NR>2 {print $1}' | xargs -n1 pip install -U  # update all packages
+
+pip install pytest pytest-mock
+
+pip freeze > requirements.txt
+
 mkdir myflaskapp
 cd myflaskapp
 
@@ -22,7 +30,7 @@ python manage.py startapp myapp
 
 pip freeze > requirements.txt
 
-pip install --upgrade pip
+pip install --upgrade pip 
 
 pip freeze --local|grep-v'^\-e'|cut-d=-f1|xargs-n1 pip install --upgrade
 
@@ -33,6 +41,7 @@ pip install pip-tools
 pip-compile --upgrade requirements.txt
 pip-sync
 
+pytest test_email_notification_dto.py
 
 
 ## ngrok 
@@ -160,3 +169,688 @@ refactor(JobsModule): Improve and enhance functionality across DTOs, models, rep
 "
 
 git push origin optimisations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GitHub Copilot Suggestions
+10 Suggestions
+Suggestion 1
+pip install requests
+
+pip install flask
+pip install flask-restful
+
+pip install django
+pip install djangorestframework
+
+pip install -r requirements.txt
+
+pip freeze > requirements.txt
+
+pip install -r requirements.txt
+
+pip install -e .
+
+pip install -e git+
+
+Accept suggestion 1
+Suggestion 2
+pip install pytest-cov
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-sugar
+
+pip install pytest-xdist
+
+pip install pytest-cov
+
+Accept suggestion 2
+Suggestion 3
+pip install pytest-cov
+
+pip install coverage
+
+pip install requests
+
+pip install flask-restful
+
+pip install flask-jwt-extended
+
+pip install flask-cors
+
+pip install flask-migrate
+
+pip install flask-mail
+
+pip install flask-socketio
+
+pip install flask-login
+
+pip install flask-sqlalchemy
+
+pip install flask-wtf
+
+pip install flask-bootstrap
+
+pip install flask-moment
+
+pip install flask-migrate
+
+pip install flask-script
+
+Accept suggestion 3
+Suggestion 4
+pip install pylint
+
+pip install black
+
+pip install -r requirements.txt
+
+pip freeze > requirements.txt
+
+pip install -r requirements.txt
+
+pip install -U pip
+
+pip freeze --local | grep -v '^-' | cut -d = -f 1 | xargs -n1 pip install -U
+
+pip install pip-review
+pip-review --auto
+
+pip install pip-tools
+pip-compile --upgrade requirements.txt
+pip-sync
+
+pip install -r requirements.txt
+
+pip install requests
+
+pip uninstall package_name
+
+pip install package_name==version
+
+pip install package_name>=version
+
+pip install package_name<=version
+
+pip install package_name~=version
+
+pip install package_name[extras]
+
+pip install package_name --no-deps
+
+pip install -e .
+
+pip install -e git+
+
+Accept suggestion 4
+Suggestion 5
+pip install coverage
+pip install pylint
+pip install black
+
+pip install django
+pip install djangorestframework
+pip install djangorestframework_simplejwt
+pip install django-cors-headers
+pip install psycopg2-binary
+pip install pillow
+pip install django-filter
+pip install django-rest-auth
+pip install django-allauth
+pip install django-rest-auth[with_social]
+pip install django-allauth[with_social]
+
+pip install flask
+pip install flask-restful
+pip install flask-jwt-extended
+pip install flask-cors
+pip install flask-migrate
+pip install flask-sqlalchemy
+pip install flask-migrate
+pip install flask-mail
+pip install flask-uploads
+pip install flask-restful
+
+Accept suggestion 5
+Suggestion 6
+pip install pylint
+
+pip install autopep8
+
+pip install black
+
+pip install flake8
+
+pip install mypy
+
+pip install coverage
+
+pip install tox
+
+pip install pre-commit
+
+pip install virtualenv
+
+pip install virtualenvwrapper
+
+pip install pipenv
+
+pip install poetry
+
+pip install cookiecutter
+
+pip install jupyterlab
+
+pip install numpy
+
+pip install pandas
+
+pip install matplotlib
+
+pip install seaborn
+
+pip install scikit-learn
+
+pip install tensorflow
+
+pip install keras
+
+pip install opencv-python
+
+pip install pillow
+
+pip install requests
+
+pip install beautifulsoup4
+
+pip install Flask
+
+pip install Django
+
+pip install fastapi
+
+pip install sqlalchemy
+
+pip install psycopg2
+
+pip install pymongo
+
+pip install redis
+
+pip install celery
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-cov
+
+pip install pytest-mock
+
+pip install pytest-pep8
+
+pip install pytest-flake8
+
+pip install pytest-black
+
+pip install pytest-pylint
+
+pip install pytest-mypy
+
+pip install pytest-cov
+
+pip install pytest-tox
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-selenium
+
+Accept suggestion 6
+Suggestion 7
+pip install Jinja2==2.11.2
+
+pip install Flask-MySQLdb
+
+pip install Flask-MySQLdb==0.2.0
+
+pip install Flask-MySQLdb==0.2.0 --no-deps
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall --no-cache-dir
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall --no-cache-dir --no-binary :all:
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall --no-cache-dir --no-binary :all: --no-build-isolation
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall --no-cache-dir --no-binary :all: --no-build-isolation --no-use-pep517
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall --no-cache-dir --no-binary :all: --no-build-isolation --no-use-pep517 --no-use-feature=2020-resolver
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall --no-cache-dir --no-binary :all: --no-build-isolation --no-use-pep517 --no-use-feature=2020-resolver --no-use-pep517 --no-use-feature=2020-resolver
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall --no-cache-dir --no-binary :all: --no-build-isolation --no-use-pep517 --no-use-feature=2020-resolver --no-use-pep517 --no-use-feature=2020-resolver --no-use-pep517 --no-use-feature=2020-resolver
+
+pip install Flask-MySQLdb==0.2.0 --no-deps --force-reinstall --no-cache-dir --no-binary :all: --no-build-isolation
+
+Accept suggestion 7
+Suggestion 8
+pip install -e . # to install the current package in editable mode
+
+pip install -r requirements.txt
+
+pip freeze > requirements.txt
+
+pip install -r requirements.txt
+
+pip install --upgrade pip
+
+pip freeze --local | grep -v '^-' | cut -d = -f 1 | xargs -n1 pip install -U
+
+pip install pip-review
+pip-review --auto
+
+pip install pip-tools
+pip-compile --upgrade requirements.txt
+pip-sync
+
+django-admin startproject myproject
+python manage.py startapp myapp
+
+pip install django
+pip install flask
+
+pip install requests
+
+pip install mysql-connector-python
+
+pip install psycopg2
+
+pip install sqlalchemy
+
+pip install pymongo
+
+pip install redis
+
+pip install boto3
+
+pip install celery
+
+pip install fastapi
+
+pip install flask-restful
+
+pip install flask-restplus
+
+pip install flask-cors
+
+pip install flask-jwt-extended
+
+pip install flask-login
+
+pip install flask-mail
+
+pip install flask-migrate
+
+pip install flask-mongoengine
+
+pip install flask-mysql
+
+pip install flask-restful-swagger-3
+
+pip install flask-restx
+
+pip install flask-sqlalchemy
+
+pip install flask-wtf
+
+pip install flask-socketio
+
+pip install flask-swagger-ui
+
+pip install flask-swagger
+
+pip install flask-jwt-extended
+
+pip install flask-jwt-simple
+
+pip install flask-bcrypt
+
+pip install flask-rest-jsonapi
+
+pip install flask-restful-swagger-3
+
+pip install flask-restplus
+
+pip install flask-restful
+
+pip install flask-cors
+
+pip install flask-jwt-extended
+
+pip install flask-login
+
+pip install flask-mail
+
+pip install flask-migrate
+
+pip install flask-mongoengine
+
+pip install flask-mysql
+
+pip install flask-restful-swagger-3
+
+pip install flask-restx
+
+pip install flask-sqlalchemy
+
+pip install flask-wtf
+
+pip install flask-socketio
+
+pip install flask-swagger-ui
+
+pip install flask-swagger
+
+pip install flask-jwt-extended
+
+pip install flask-jwt-simple
+
+pip install flask-bcrypt
+
+pip install flask-rest-jsonapi
+
+pip install flask-restful-swagger-3
+
+pip install flask-restplus
+
+pip install flask-restful
+
+pip install flask-cors
+
+pip install flask-jwt-extended
+
+pip install flask-login
+
+pip install flask-mail
+
+pip install flask-migrate
+
+pip install flask-mongoengine
+
+pip install flask-m
+
+Accept suggestion 8
+Suggestion 9
+pip install pylint
+
+pip install black
+
+pip install flake8
+
+pip install coverage
+
+pip install tox
+
+pip install pre-commit
+
+pip install mypy
+
+pip install bandit
+
+pip install safety
+
+pip install pytest-cov
+
+pip install pytest-xdist
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-html
+
+pip install pytest-mock
+
+pip install pytest-xdist
+
+pip install pytest-watch
+
+pip install pytest-sugar
+
+pip install pytest-cov
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-html
+
+pip install pytest-mock
+
+pip install pytest-xdist
+
+pip install pytest-watch
+
+pip install pytest-sugar
+
+pip install pytest-cov
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-html
+
+pip install pytest-mock
+
+pip install pytest-xdist
+
+pip install pytest-watch
+
+pip install pytest-sugar
+
+pip install pytest-cov
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-html
+
+pip install pytest-mock
+
+pip install pytest-xdist
+
+pip install pytest-watch
+
+pip install pytest-sugar
+
+pip install pytest-cov
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-html
+
+pip install pytest-mock
+
+pip install pytest-xdist
+
+pip install pytest-watch
+
+pip install pytest-sugar
+
+pip install pytest-cov
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-html
+
+pip install pytest-mock
+
+pip install pytest-xdist
+
+pip install pytest-watch
+
+pip install pytest-sugar
+
+pip install pytest-cov
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-html
+
+pip install pytest-mock
+
+pip install pytest-xdist
+
+pip install pytest-watch
+
+pip install pytest-sugar
+
+pip install pytest-cov
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest-html
+
+pip install pytest-mock
+
+pip install pytest-xdist
+
+pip install pytest-watch
+
+pip install pytest-sugar
+
+pip install pytest-cov
+
+pip install pytest-asyncio
+
+pip install pytest-django
+
+pip install pytest-flask
+
+pip install pytest
+
+Accept suggestion 9
+Suggestion 10
+pip install -e .  # install the package in editable mode
+
+pip uninstall flask
+
+pip freeze > requirements.txt
+
+pip install -r requirements.txt
+
+pip install requests
+
+pip install -U requests
+
+pip install -U requests==2.24.0
+
+pip install -U requests>=2.24.0
+
+pip install -U "requests[security]"
+
+pip install -U "requests[security]==2.24.0"
+
+pip install -U "requests[security]>=2.24.0"
+
+pip install -U "requests[security]!=2.24.0"
+
+pip install -U "requests[security]>2.24.0"
+
+pip install -U "requests[security]<2.24.0"
+
+pip install -U "requests[security]~=2.24.0"
+
+pip install -U "requests[security]~=2.24"
+
+pip install -U "requests[security]~=2"
+
+pip install -U "requests[security]~=2.24.0"
+
+pip install -U "requests[security]~=2.24"
+
+pip install -U "requests[security]~=2"
+
+pip install -U "requests[security]~=2.24.0"
+
+pip install -U "requests[security]~=2.24"
+
+pip install -U "requests[security]~=2"
+
+pip install -U "requests[security]~=2.24.0"
+
+pip install -U "requests[security]~=2.24"
+
+pip install -U "requests[security]~=2"
+
+pip install -U "requests[security]~=2.24.0"
+
+pip install -U "requests[security]~=2.24"
+
+pip install -U "requests[security]~=2"
+
+pip install -U "requests[security]~=2.24.0"
+
+pip install -U "requests[security]~=2.24"
+
+pip install -U "requests[security]~=2"
+
+pip install -U "requests[security]~=2.24.0"
+
+pip install -U "requests[security]~=2.24"
+
+pip install -U "requests[security]~=2"
+
+pip install -U "requests[security]~=2.24.0"
+
+pip install -U "requests[security]~=2.24"
+
+pip install -U "requests[security]~=2"
+
+pip install -U "requests[security]~=2.24
+
+Accept suggestion 10

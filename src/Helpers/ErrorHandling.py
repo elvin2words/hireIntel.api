@@ -1,10 +1,11 @@
-from src.Helpers.Response import apiResponse
+from src.Helpers.Response import apiResponse 
  
 
 class CustomError(Exception):
     def __init__(self, msg, code):
         self.msg = msg
         self.code = code
+        super().__init__(self.msg)
 
 def handleCustomError(e):
     print(f"handle_custom_error: {e}")
