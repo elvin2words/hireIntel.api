@@ -7,3 +7,5 @@ venv
 
 # ignore the database
 instance
+
+notes.md

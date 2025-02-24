@@ -22,7 +22,7 @@ candidateService = CandidateService()
 #====================================
 
 @ADMIN_CONTROLLER.route('/jobs', methods=['GET'])
-@jwt_required()
+# @jwt_required()
 def get_all_jobs():
     filters = request.args.to_dict()
     jobs = jobService.fetch_all(filters)
@@ -30,7 +30,7 @@ def get_all_jobs():
 
 
 @ADMIN_CONTROLLER.route('/jobs/<string:job_id>', methods=['GET'])
-@jwt_required()
+# @jwt_required()
 def get_job_by_id(job_id: str):
     job = jobService.fetch_by_id(job_id)
     return apiResponse(False, 200, job, "Job fetched successfully")
@@ -45,7 +45,7 @@ def create_job():
 
 
 @ADMIN_CONTROLLER.route('/jobs/<string:job_id>', methods=['PUT'])
-@jwt_required()
+# @jwt_required()
 def update_job(job_id: str):
     data = request.get_json()
     job = jobService.update_job(job_id, data)
@@ -53,21 +53,21 @@ def update_job(job_id: str):
 
 
 @ADMIN_CONTROLLER.route('/jobs/<string:job_id>', methods=['DELETE'])
-@jwt_required()
+# @jwt_required()
 def delete_job(job_id: str):
     jobService.delete_job(job_id)
     return apiResponse(False, 200, None, "Job deleted successfully")
 
 
 @ADMIN_CONTROLLER.route('/jobs/<string:job_id>/publish', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def publish_job(job_id: str):
     job = jobService.publish_job(job_id)
     return apiResponse(False, 200, job, "Job published successfully")
 
 
 @ADMIN_CONTROLLER.route('/jobs/<string:job_id>/close', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def close_job(job_id: str):
     job = jobService.close_job(job_id)
     return apiResponse(False, 200, job, "Job closed successfully")

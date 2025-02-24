@@ -10,5 +10,6 @@ def apiResponse(error, code, data, msg):
         "data": data,
         "msg": msg,
         "timestamp": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        # "timestamp": datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     }
     return jsonify(response), code
