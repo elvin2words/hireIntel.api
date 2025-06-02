@@ -7,3 +7,8 @@ venv
 
 # ignore the database
 instance
+
+django_steps.md
+flask_steps.md
+notes.md
+tokens.md

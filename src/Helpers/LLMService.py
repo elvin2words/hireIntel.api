@@ -611,3 +611,4 @@ class LLMService:
 
         except Exception as e:
             raise Exception(f"Email infor extraction failed: {str(e)}")
+         

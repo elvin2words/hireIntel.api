@@ -1,7 +1,7 @@
 import signal
 import threading
 
-from flask import Flask
+from flask import Flask, send_from_directory
 from marshmallow import ValidationError
 
 from src.Controllers.AdminController import ADMIN_CONTROLLER
@@ -54,6 +54,15 @@ def main():
     )
 
     init_signal_handlers(app)
+
+    # Dashboard routes
+    @app.route('/')
+    def dashboard():
+        return send_from_directory('src/static', 'index.html')
+
+    @app.route('/<path:filename>')
+    def static_files(filename):
+        return send_from_directory('src/static', filename)
 
     try:
         options = {

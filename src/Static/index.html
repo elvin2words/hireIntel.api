@@ -1,0 +1,361 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireIntel - Recruitment Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-user-tie"></i> HireIntel</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </li>
+                <li class="nav-item" data-page="jobs">
+                    <i class="fas fa-briefcase"></i> Jobs
+                </li>
+                <li class="nav-item" data-page="candidates">
+                    <i class="fas fa-users"></i> Candidates
+                </li>
+                <li class="nav-item" data-page="interviews">
+                    <i class="fas fa-calendar-alt"></i> Interviews
+                </li>
+                <li class="nav-item" data-page="pipeline">
+                    <i class="fas fa-cogs"></i> Pipeline Monitor
+                </li>
+                <li class="nav-item" data-page="analytics">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search candidates, jobs...">
+                </div>
+                <div class="user-actions">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-count">3</span>
+                    </button>
+                    <div class="user-profile">
+                        <img src="https://via.placeholder.com/40" alt="Admin">
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Overview -->
+            <div id="dashboard-page" class="page active">
+                <div class="page-header">
+                    <h1>Dashboard Overview</h1>
+                    <div class="quick-actions">
+                        <button class="btn btn-primary" onclick="openJobModal()">
+                            <i class="fas fa-plus"></i> New Job
+                        </button>
+                        <button class="btn btn-secondary" onclick="openScheduleModal()">
+                            <i class="fas fa-calendar-plus"></i> Schedule Interview
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="active-jobs">0</h3>
+                            <p>Active Jobs</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-candidates">0</h3>
+                            <p>Total Candidates</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="scheduled-interviews">0</h3>
+                            <p>Scheduled Interviews</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="hired-candidates">0</h3>
+                            <p>Hired This Month</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="content-row">
+                        <div class="card recent-activity">
+                            <h3>Recent Activity</h3>
+                            <div id="recent-activity-list">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                        <div class="card pipeline-status">
+                            <h3>Pipeline Status</h3>
+                            <div id="pipeline-chart">
+                                <!-- Chart will be rendered here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Jobs Management -->
+            <div id="jobs-page" class="page">
+                <div class="page-header">
+                    <h1>Job Management</h1>
+                    <button class="btn btn-primary" onclick="openJobModal()">
+                        <i class="fas fa-plus"></i> Create Job
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="jobs-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Industry</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Candidates</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobs-tbody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Candidates Management -->
+            <div id="candidates-page" class="page">
+                <div class="page-header">
+                    <h1>Candidate Management</h1>
+                    <div class="filters">
+                        <select id="status-filter">
+                            <option value="">All Status</option>
+                            <option value="applied">Applied</option>
+                            <option value="interviewing">Interviewing</option>
+                            <option value="offered">Offered</option>
+                            <option value="hired">Hired</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="candidates-grid" id="candidates-grid">
+                    <!-- Dynamic candidate cards -->
+                </div>
+            </div>
+
+            <!-- Interviews Management -->
+            <div id="interviews-page" class="page">
+                <div class="page-header">
+                    <h1>Interview Management</h1>
+                    <button class="btn btn-primary" onclick="openScheduleModal()">
+                        <i class="fas fa-calendar-plus"></i> Schedule Interview
+                    </button>
+                </div>
+                <div class="calendar-container">
+                    <div id="interview-calendar">
+                        <!-- Calendar will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline Monitor -->
+            <div id="pipeline-page" class="page">
+                <div class="page-header">
+                    <h1>Pipeline Monitor</h1>
+                    <div class="pipeline-controls">
+                        <button class="btn btn-secondary" onclick="refreshPipeline()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <span class="status-indicator online" id="pipeline-status">
+                            <i class="fas fa-circle"></i> Pipeline Active
+                        </span>
+                    </div>
+                </div>
+                <div class="pipeline-stages">
+                    <div class="stage-card" data-stage="xml">
+                        <h3>File Processing</h3>
+                        <div class="stage-count" id="xml-count">0</div>
+                        <div class="stage-progress">
+                            <div class="progress-bar" id="xml-progress"></div>
+                        </div>
+                    </div>
+                    <div class="stage-card" data-stage="extract">
+                        <h3>Text Extraction</h3>
+                        <div class="stage-count" id="extract-count">0</div>
+                        <div class="stage-progress">
+                            <div class="progress-bar" id="extract-progress"></div>
+                        </div>
+                    </div>
+                    <div class="stage-card" data-stage="scraping">
+                        <h3>Data Scraping</h3>
+                        <div class="stage-count" id="scraping-count">0</div>
+                        <div class="stage-progress">
+                            <div class="progress-bar" id="scraping-progress"></div>
+                        </div>
+                    </div>
+                    <div class="stage-card" data-stage="profile">
+                        <h3>Profile Creation</h3>
+                        <div class="stage-count" id="profile-count">0</div>
+                        <div class="stage-progress">
+                            <div class="progress-bar" id="profile-progress"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="real-time-feed" id="pipeline-feed">
+                    <h3>Real-time Updates</h3>
+                    <div class="feed-content" id="feed-content">
+                        <!-- Live updates -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics -->
+            <div id="analytics-page" class="page">
+                <div class="page-header">
+                    <h1>Analytics & Reports</h1>
+                </div>
+                <div class="analytics-grid">
+                    <div class="chart-card">
+                        <h3>Hiring Funnel</h3>
+                        <canvas id="funnel-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Time to Hire</h3>
+                        <canvas id="time-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Success Rate by Source</h3>
+                        <canvas id="source-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Monthly Trends</h3>
+                        <canvas id="trends-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="job-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Job</h2>
+                <span class="close" onclick="closeModal('job-modal')">&times;</span>
+            </div>
+            <form id="job-form">
+                <div class="form-group">
+                    <label>Job Title</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Industry</label>
+                        <select name="industry" required>
+                            <option value="technology">Technology</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="finance">Finance</option>
+                            <option value="education">Education</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Role Category</label>
+                        <input type="text" name="role_category" placeholder="e.g. Engineering, Sales" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" rows="4" required></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" name="location" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Employment Type</label>
+                        <select name="employment_type" required>
+                            <option value="full_time">Full Time</option>
+                            <option value="part_time">Part Time</option>
+                            <option value="contract">Contract</option>
+                            <option value="freelance">Freelance</option>
+                            <option value="internship">Internship</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('job-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Schedule Interview</h2>
+                <span class="close" onclick="closeModal('schedule-modal')">&times;</span>
+            </div>
+            <form id="schedule-form">
+                <div class="form-group">
+                    <label>Select Candidates</label>
+                    <div id="candidate-selection">
+                        <!-- Dynamic candidate list -->
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="datetime-local" name="start_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="datetime-local" name="end_date" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('schedule-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Schedule Interviews</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
